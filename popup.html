@@ -23,16 +23,25 @@
             <input type="text" class="truck-number" placeholder="رقم البيان الجمركى" />
             <div class="flex items-center truck-actions">
               <button class="delete-truck">x</button>
-              <button id="add-truck" class="add-truck">+</button>
+              <button class="add-truck">+</button>
             </div>
           </div>
         </div>
+
+        <!-- actions buttons area  -->
         <div class="flex items-center truck-list-actions">
           <button id="submit" class="save-trucks">حفظ البيانات</button>
           <button id="clear-storage" class="clear-trucks">مسح البيانات المحفوظة</button>
           <button id="start" class="start-button hidden">بدء ملئ البيانات</button>
         </div>
       </section>
+
+      <!-- loading area  -->
+      <div id="loading" class="hidden">
+        <p>جارٍ تعبئة البيانات...</p>
+        <button id="stop" class="stop-button">وقف تعبئة البيانات</button>
+      </div>
+
       <footer>
         تمت البرمجة بواسطة <a href="https://wa.me/+201159258110" target="_blank">محمود حسين</a>
       </footer>

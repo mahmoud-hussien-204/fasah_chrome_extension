@@ -1,8 +1,12 @@
 document.addEventListener("DOMContentLoaded", () => {
+  const trucksSection = document.querySelector(".trucks");
   const trucksList = document.getElementById("trucks-list");
   const submitBtn = document.getElementById("submit");
   const clearStorageBtn = document.getElementById("clear-storage");
   const startBtn = document.getElementById("start");
+  const loadingDiv = document.getElementById("loading");
+
+  let isFillingForm = false;
 
   // Load existing data from localStorage and set initial Start button state
   loadStoredData();
@@ -98,10 +102,12 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    revertUI();
+
     chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
       const currentTab = tabs[0];
-      const targetUrlPattern = "https://example.com/*"; // Replace with your URL pattern
-      const urlMatches = currentTab.url.match(targetUrlPattern.replace("*", ".*"));
+      const targetUrlPattern = /^https:\/\/oga\.fasah\.sa\/[^\/]+\/broker\/2\.0\/.*$/;
+      const urlMatches = targetUrlPattern.test(currentTab.url);
 
       if (urlMatches) {
         chrome.tabs.sendMessage(
@@ -220,6 +226,18 @@ document.addEventListener("DOMContentLoaded", () => {
         startBtn.classList.add("hidden");
       });
     });
+  }
+
+  function revertUI() {
+    if (isFillingForm) {
+      trucksSection.classList.remove("hidden");
+      loadingDiv.classList.add("hidden");
+      isFillingForm = false;
+    } else {
+      trucksSection.classList.add("hidden");
+      loadingDiv.classList.remove("hidden");
+      isFillingForm = true;
+    }
   }
 
   // Initial setup
