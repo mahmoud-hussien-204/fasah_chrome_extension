@@ -13,11 +13,14 @@ const options = {
   modal: {
     waiting: 500,
   },
+  datePicker: {
+    waiting: 600,
+  },
   customsDeclarationNumber: {
     waiting: 500,
   },
   truckNumber: {
-    waiting: 300,
+    waiting: 200,
   },
 };
 
@@ -37,6 +40,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     const isFilledPurpose = fillPurposeSelect();
 
+    // run transitTimeType if purpose is already filled
+    if (isFilledPurpose.isFilled && !isFilledPurpose.isOk) {
+      fillTransitTimeTypeSelect(document.body).then((result) => {
+        if (result.isFilled && !result.isOk) {
+          console.log("is ok run accessPort");
+        }
+      });
+    }
+
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         console.log("mutation", mutation);
@@ -45,13 +57,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if (node.nodeType !== Node.ELEMENT_NODE) return;
             fillTransitTimeTypeSelect(node);
             fillAccessPortSelect(node);
-            // detectIfThereIsNo(node);
+            // detectIfthereIsNo(node);
             const isFilledDatePicker = fillDatePicker(node);
+            if (isFilledDatePicker.isFilled && isFilledDatePicker.isOk) {
+              fillCustomsDeclarationNumber(document.body, data[selectedIndex]);
+            }
             fillTruckNumber(node, data[selectedIndex]);
           });
-        } else if (mutation.type === "attributes") {
-          fillCustomsDeclarationNumber(mutation.target, data[selectedIndex]);
-          getSchedulesButton(mutation.target);
         }
       });
     });
@@ -145,39 +157,7 @@ async function fillAccessPortSelect(node) {
   return {isFilled: true, isOk: true};
 }
 
-async function fillCustomsDeclarationNumber(node, data) {
-  const customsDeclarationNumberInput =
-    node.name === "broker:create_appointment:decleration_number" ? node : null;
-
-  if (!customsDeclarationNumberInput) return {isFilled: false, isOk: false};
-
-  customsDeclarationNumberInput.value = data.customsDeclarationNumber;
-
-  customsDeclarationNumberInput.dispatchEvent(new Event("input"));
-
-  const customsDeclarationNumberButton = document.querySelector(
-    "button.btn.btn-outline-info.btn-block[data-i18n='Search']"
-  );
-
-  if (!customsDeclarationNumberButton) return {isFilled: false, isOk: false};
-
-  await new Promise((resolve) => {
-    setTimeout(() => {
-      resolve();
-    }, options.customsDeclarationNumber.waiting);
-  });
-
-  customsDeclarationNumberButton.click();
-
-  return {isFilled: true, isOk: true};
-}
-
-function getSchedulesButton(node) {
-  if (node.dataset.i18n !== "tms:getSchedules") return;
-  node.click();
-}
-
-async function detectIfThereIsNo(node) {
+async function detectIfthereIsNo(node) {
   const modalElement = node.classList.contains("modal");
 
   if (!modalElement) return false;
@@ -205,7 +185,7 @@ async function detectIfThereIsNo(node) {
       }, timer);
     });
 
-    getSchedulesButton(document.querySelector("button[data-i18n='tms:getSchedules']"));
+    fillAccessPortSelect(document.body);
   };
 
   if (isAlertLimitExceeded) {
@@ -231,34 +211,51 @@ function fillDatePicker(node) {
           "table > tbody > tr:has(input[type=radio]):nth-last-child(3) input[type=radio]"
         )
       : document.querySelector(
-          "table > tbody > tr:has(input[type=radio]):last-child input[type=radio]"
+          "table > tbody > tr:has(input[type=radio]):nth-last-child input[type=radio]"
         );
   input.checked = true;
 
   input.dispatchEvent(new Event("change"));
-  input.dispatchEvent(new Event("click"));
 
   document.querySelector("div.wizard-action-buttons button[data-i18n=nextButtonText]").click();
 
   return {isFilled: true, isOk: true};
 }
 
+async function fillCustomsDeclarationNumber(node, data) {
+  const customsDeclarationNumberInput = node.querySelector(
+    "input[name='broker:create_appointment:decleration_number']"
+  );
+
+  if (!customsDeclarationNumberInput) return {isFilled: false, isOk: false};
+
+  customsDeclarationNumberInput.value = data.customsDeclarationNumber;
+
+  customsDeclarationNumberInput.dispatchEvent(new Event("input"));
+
+  const customsDeclarationNumberButton = node.querySelector(
+    "button.btn.btn-outline-info.btn-block[data-i18n='Search']"
+  );
+
+  if (!customsDeclarationNumberButton) return {isFilled: false, isOk: false};
+
+  await new Promise((resolve) => {
+    setTimeout(() => {
+      resolve();
+    }, options.customsDeclarationNumber.waiting);
+  });
+
+  customsDeclarationNumberButton.click();
+
+  return {isFilled: true, isOk: true};
+}
+
 async function fillTruckNumber(node, data) {
-  const truckNumberInput = document.querySelector(`.tab-pane.active div[id='driver1'] input`);
+  const truckNumberButton = node.querySelector(`button[id='driver1']`);
 
-  console.log("truckNumberButton input", truckNumberInput, node);
+  if (!truckNumberButton) return {isFilled: false, isOk: false};
 
-  // if (!truckNumberInput || truckNumberInput.value) return;
-
-  // const truckNumberButton = document.querySelector(`.tab-pane.active button[id='driver1']`);
-
-  // console.log("truckNumberButton", truckNumberButton);
-
-  // if (!truckNumberButton) return {isFilled: false, isOk: false};
-
-  // truckNumberButton.click();
-
-  // truckNumberButton.dispatchEvent(new Event("click"));
+  truckNumberButton.click();
 
   // await new Promise((resolve) => {
   //   setTimeout(() => {
@@ -266,17 +263,19 @@ async function fillTruckNumber(node, data) {
   //   }, options.truckNumber.waiting);
   // });
 
-  // const truckNumberInput = document.querySelector(
-  //   ".modal.show input[test-attr='data-table-search-field']"
-  // );
+  const truckNumberInput = document.querySelector(
+    ".modal.show input[test-attr='data-table-search-field']"
+  );
 
-  // if (!truckNumberInput) return {isFilled: false, isOk: false};
+  console.log("truckNumberInput", truckNumberInput, node);
 
-  // truckNumberInput.value = data.truckNumber;
+  if (!truckNumberInput) return {isFilled: false, isOk: false};
 
-  // truckNumberInput.dispatchEvent(new Event("input"));
+  truckNumberInput.value = data.truckNumber;
 
-  // truckNumberInput.dispatchEvent(new Event("change"));
+  truckNumberInput.dispatchEvent(new Event("input"));
+
+  truckNumberInput.dispatchEvent(new Event("change"));
 
   return {isFilled: true, isOk: true};
 }
