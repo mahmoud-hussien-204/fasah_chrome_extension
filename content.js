@@ -3,7 +3,7 @@ const options = {
     value: 6,
   },
   transitTimeType: {
-    value: "entry", // "entry" or "exit"
+    value: "exit", // "entry" or "exit"
     waiting: 600,
   },
   accessPort: {
@@ -17,7 +17,13 @@ const options = {
     waiting: 500,
   },
   truckNumber: {
-    waiting: 300,
+    waiting: 200,
+  },
+  datePicker: {
+    waiting: 200,
+  },
+  searchOnTruckNumber: {
+    waiting: 1000,
   },
 };
 
@@ -39,19 +45,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
-        console.log("mutation", mutation);
+        console.log("mutation detect", mutation);
+
         if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
           mutation.addedNodes.forEach((node) => {
             if (node.nodeType !== Node.ELEMENT_NODE) return;
             fillTransitTimeTypeSelect(node);
             fillAccessPortSelect(node);
             // detectIfThereIsNo(node);
-            const isFilledDatePicker = fillDatePicker(node);
-            fillTruckNumber(node, data[selectedIndex]);
+            fillDatePicker(node);
+            searchOnTruckNumber(node, data[selectedIndex]);
+            chooseTruckNumber(node);
           });
         } else if (mutation.type === "attributes") {
-          fillCustomsDeclarationNumber(mutation.target, data[selectedIndex]);
-          getSchedulesButton(mutation.target);
+          if (mutation.attributeName === "disabled") {
+            fillCustomsDeclarationNumber(mutation.target, data[selectedIndex]);
+            getSchedulesButton(mutation.target);
+          }
         }
       });
     });
@@ -59,6 +69,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     observer.observe(document.body, {
       childList: true,
       subtree: true,
+      attributes: true,
       attributeFilter: ["disabled"],
     });
   }
@@ -218,12 +229,18 @@ async function detectIfThereIsNo(node) {
   retry();
 }
 
-function fillDatePicker(node) {
+async function fillDatePicker(node) {
   const datePickerElement = node.querySelector(".tab-pane:first-child .datepicker");
 
   if (!datePickerElement) return {isFilled: false, isOk: false};
 
   datePickerElement.querySelector("td:not(.disabled)").click();
+
+  await new Promise((resolve) => {
+    setTimeout(() => {
+      resolve();
+    }, options.datePicker.waiting);
+  });
 
   const input =
     document.querySelectorAll("table > tbody > tr input[type=radio]").length > 3
@@ -233,6 +250,9 @@ function fillDatePicker(node) {
       : document.querySelector(
           "table > tbody > tr:has(input[type=radio]):last-child input[type=radio]"
         );
+
+  if (!input) return {isFilled: false, isOk: false};
+
   input.checked = true;
 
   input.dispatchEvent(new Event("change"));
@@ -240,43 +260,83 @@ function fillDatePicker(node) {
 
   document.querySelector("div.wizard-action-buttons button[data-i18n=nextButtonText]").click();
 
-  return {isFilled: true, isOk: true};
-}
+  await new Promise((resolve) => {
+    setTimeout(() => {
+      resolve();
+    }, options.datePicker.waiting);
+  });
 
-async function fillTruckNumber(node, data) {
-  const truckNumberInput = document.querySelector(`.tab-pane.active div[id='driver1'] input`);
-
-  console.log("truckNumberButton input", truckNumberInput, node);
-
-  // if (!truckNumberInput || truckNumberInput.value) return;
-
-  // const truckNumberButton = document.querySelector(`.tab-pane.active button[id='driver1']`);
-
-  // console.log("truckNumberButton", truckNumberButton);
-
-  // if (!truckNumberButton) return {isFilled: false, isOk: false};
-
-  // truckNumberButton.click();
-
-  // truckNumberButton.dispatchEvent(new Event("click"));
-
-  // await new Promise((resolve) => {
-  //   setTimeout(() => {
-  //     resolve();
-  //   }, options.truckNumber.waiting);
-  // });
-
-  // const truckNumberInput = document.querySelector(
-  //   ".modal.show input[test-attr='data-table-search-field']"
-  // );
-
-  // if (!truckNumberInput) return {isFilled: false, isOk: false};
-
-  // truckNumberInput.value = data.truckNumber;
-
-  // truckNumberInput.dispatchEvent(new Event("input"));
-
-  // truckNumberInput.dispatchEvent(new Event("change"));
+  fillTruckNumber(document.querySelector(".tab-pane.wizard-step.active"));
 
   return {isFilled: true, isOk: true};
 }
+
+async function fillTruckNumber(node) {
+  const truckNumberButton = node.querySelector("button#driver1");
+
+  if (!truckNumberButton) return {isFilled: false, isOk: false};
+
+  truckNumberButton.click();
+
+  return {isFilled: true, isOk: true};
+}
+
+let isSearching = false;
+
+async function searchOnTruckNumber(node, data) {
+  console.log("isSearching", isSearching);
+
+  if (isSearching) return;
+
+  const bodyElement = node.tagName === "TBODY";
+
+  if (!bodyElement) return false;
+
+  const isInModal = node.closest(".modal");
+
+  if (!isInModal) return false;
+
+  const isInDataTableContainer = node.closest(".data-table-container");
+
+  if (!isInDataTableContainer || !isInDataTableContainer.dataset.totalElements) return false;
+
+  const selectRecord = isInDataTableContainer.querySelector("tr:first-child button");
+
+  if (!selectRecord) return false;
+
+  const searchInput = isInModal.querySelector(
+    ".search-input input[test-attr='data-table-search-field']"
+  );
+
+  if (!searchInput || searchInput.value) return false;
+
+  isSearching = true;
+
+  await new Promise((resolve) => {
+    setTimeout(() => {
+      resolve();
+    }, options.searchOnTruckNumber.waiting);
+  });
+
+  searchInput.value = data.truckNumber;
+
+  searchInput.dispatchEvent(new Event("input"));
+  searchInput.dispatchEvent(new Event("change"));
+  searchInput.dispatchEvent(new KeyboardEvent("keyup", {bubbles: true, key: "a"}));
+
+  await new Promise((resolve) => {
+    setTimeout(() => {
+      resolve();
+    }, options.searchOnTruckNumber.waiting);
+  });
+
+  console.log(
+    "isSearching",
+    isSearching,
+    document.querySelector(".modal.show .data-table-container tr:first-child button")
+  );
+
+  return true;
+}
+
+async function chooseTruckNumber(node) {}
