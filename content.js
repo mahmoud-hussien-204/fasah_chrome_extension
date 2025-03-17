@@ -55,7 +55,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             // detectIfThereIsNo(node);
             fillDatePicker(node);
             searchOnTruckNumber(node, data[selectedIndex]);
-            chooseTruckNumber(node);
+            chooseTruckNumber(node, data[selectedIndex]);
           });
         } else if (mutation.type === "attributes") {
           if (mutation.attributeName === "disabled") {
@@ -284,8 +284,6 @@ async function fillTruckNumber(node) {
 let isSearching = false;
 
 async function searchOnTruckNumber(node, data) {
-  console.log("isSearching", isSearching);
-
   if (isSearching) return;
 
   const bodyElement = node.tagName === "TBODY";
@@ -312,31 +310,38 @@ async function searchOnTruckNumber(node, data) {
 
   isSearching = true;
 
-  await new Promise((resolve) => {
-    setTimeout(() => {
-      resolve();
-    }, options.searchOnTruckNumber.waiting);
-  });
-
   searchInput.value = data.truckNumber;
 
   searchInput.dispatchEvent(new Event("input"));
   searchInput.dispatchEvent(new Event("change"));
   searchInput.dispatchEvent(new KeyboardEvent("keyup", {bubbles: true, key: "a"}));
-
-  await new Promise((resolve) => {
-    setTimeout(() => {
-      resolve();
-    }, options.searchOnTruckNumber.waiting);
-  });
-
-  console.log(
-    "isSearching",
-    isSearching,
-    document.querySelector(".modal.show .data-table-container tr:first-child button")
-  );
-
   return true;
 }
 
-async function chooseTruckNumber(node) {}
+async function chooseTruckNumber(node, data) {
+  const bodyElement = node.tagName === "TBODY";
+
+  if (!bodyElement) return false;
+
+  const isInModal = node.closest(".modal");
+
+  if (!isInModal) return false;
+
+  const isInDataTableContainer = node.closest(".data-table-container");
+
+  if (!isInDataTableContainer || !isInDataTableContainer.dataset.totalElements) return false;
+
+  const selectRecord = isInDataTableContainer.querySelector("tr:first-child");
+
+  if (!selectRecord) return false;
+
+  try {
+    const obj = selectRecord.dataset.obj;
+    const parse = JSON.parse(obj);
+    if (parse?.vehicleSequenceNumber == data.truckNumber) {
+      selectRecord.querySelector("button").click();
+    }
+  } catch (error) {
+    console.log("error when select record", error);
+  }
+}
