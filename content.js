@@ -27,10 +27,14 @@ const options = {
   },
 };
 
+let selectedIndex = 0;
+
+let isSearching = false;
+
+let searchType;
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "start") {
-    let selectedIndex = 0;
-
     const data = message.data;
 
     const isFilledPurpose = fillPurposeSelect();
@@ -44,7 +48,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if (node.nodeType !== Node.ELEMENT_NODE) return;
             fillTransitTimeTypeSelect(node);
             fillAccessPortSelect(node);
-            // detectIfThereIsNo(node);
+            detectIfThereIsNo(node);
             fillDatePicker(node);
             searchOnTruckData(node, data[selectedIndex]);
             chooseTruckData(node, data[selectedIndex]);
@@ -267,10 +271,6 @@ async function fillDatePicker(node) {
   return {isFilled: true, isOk: true};
 }
 
-let isSearching = false;
-
-let searchType;
-
 async function fillTruckNumber(node) {
   const truckNumberButton = node.querySelector("button#driver1");
 
@@ -379,6 +379,7 @@ async function addTruckButton(node, callback) {
   const button = document.querySelector(
     "div.wizard-action-buttons button[data-i18n=submitButtonText]"
   );
+  button.click();
   button.dispatchEvent(new Event("click"));
   if (callback) callback();
 }
