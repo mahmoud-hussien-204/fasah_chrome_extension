@@ -18,7 +18,8 @@ document.addEventListener("DOMContentLoaded", () => {
       truckEntry.className = "truck-entry";
       truckEntry.innerHTML = `
         <input type="text" class="truck-name" placeholder="اسم السائق">
-        <input type="text" class="truck-number" placeholder="رقم البيان الجمركى">
+        <input type="text" class="truck-number" placeholder="رقم السيارة">
+        <input type="text" class="truck-declaration-number" placeholder="رقم البيان الجمركى">
         <div class="flex items-center truck-actions">
           <button class="delete-btn delete-truck">x</button>
           <button class="add-truck">+</button>
@@ -43,11 +44,14 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".truck-entry").forEach((entry) => {
       const nameInput = entry.querySelector(".truck-name");
       const numberInput = entry.querySelector(".truck-number");
+      const declarationNumberInput = entry.querySelector(".truck-number");
       const name = nameInput.value.trim();
       const number = numberInput.value.trim();
+      const declarationNumber = declarationNumberInput.value.trim();
 
       nameInput.classList.remove("error");
       numberInput.classList.remove("error");
+      declarationNumberInput.classList.remove("error");
 
       if (!name) {
         nameInput.classList.add("error");
@@ -57,8 +61,12 @@ document.addEventListener("DOMContentLoaded", () => {
         numberInput.classList.add("error");
         hasError = true;
       }
-      if (name && number) {
-        trucks.push({name, number});
+      if (!declarationNumber) {
+        declarationNumberInput.classList.add("error");
+        hasError = true;
+      }
+      if (name && number && declarationNumber) {
+        trucks.push({name, truckNumber: number, customsDeclarationNumber: declarationNumber});
       }
     });
 
@@ -78,8 +86,9 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.removeItem("truckData");
     trucksList.innerHTML = `
       <div class="truck-entry">
-        <input type="text" class="truck-name" placeholder="اسم السائق" autofocus>
-        <input type="text" class="truck-number" placeholder="رقم البيان الجمركى">
+        <input type="text" class="truck-name" placeholder="اسم السائق">
+        <input type="text" class="truck-number" placeholder="رقم السيارة">
+        <input type="text" class="truck-declaration-number" placeholder="رقم البيان الجمركى">
         <div class="flex items-center truck-actions">
           <button class="delete-btn delete-truck">x</button>
           <button class="add-truck">+</button>
@@ -118,9 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
           },
           (response) => {
             if (response && response.success) {
-              alert("تم تعبئة النموذج بنجاح!");
             } else {
-              alert("حدث خطأ أثناء تعبئة النموذج. تأكد من تحميل الصفحة بشكل كامل.");
             }
           }
         );
@@ -163,8 +170,11 @@ document.addEventListener("DOMContentLoaded", () => {
         truckEntry.className = "truck-entry";
         truckEntry.innerHTML = `
           <input type="text" class="truck-name" value="${truck.name}" placeholder="اسم السائق">
-          <input type="text" class="truck-number" value="${
-            truck.number
+           <input type="text" class="truck-number" value="${
+             truck.truckNumber
+           }" placeholder="رقم السيارة">
+          <input type="text" class="truck-declaration-number" value="${
+            truck.customsDeclarationNumber
           }" placeholder="رقم البيان الجمركى">
           <div class="flex items-center truck-actions">
             <button class="delete-btn delete-truck">x</button>
@@ -218,14 +228,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Attach input listeners for error handling and Start button hiding
   function attachInputListeners() {
-    document.querySelectorAll(".truck-name, .truck-number").forEach((input) => {
-      input.addEventListener("input", () => {
-        if (input.value.trim()) {
-          input.classList.remove("error");
-        }
-        startBtn.classList.add("hidden");
+    document
+      .querySelectorAll(".truck-name, .truck-number, .truck-declaration-number")
+      .forEach((input) => {
+        input.addEventListener("input", () => {
+          if (input.value.trim()) {
+            input.classList.remove("error");
+          }
+          startBtn.classList.add("hidden");
+        });
       });
-    });
   }
 
   function revertUI() {

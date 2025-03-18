@@ -17,29 +17,21 @@ const options = {
     waiting: 500,
   },
   truckNumber: {
+    waiting: 1500,
+  },
+  truckName: {
     waiting: 200,
   },
   datePicker: {
     waiting: 200,
   },
-  searchOnTruckNumber: {
-    waiting: 1000,
-  },
 };
-
-const data = [
-  {
-    name: "احمد رمضان حافظ",
-    truckNumber: 3732,
-    customsDeclarationNumber: 100316,
-  },
-];
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "start") {
-    let success = false;
-
     let selectedIndex = 0;
+
+    const data = message.data;
 
     const isFilledPurpose = fillPurposeSelect();
 
@@ -54,13 +46,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             fillAccessPortSelect(node);
             // detectIfThereIsNo(node);
             fillDatePicker(node);
-            searchOnTruckNumber(node, data[selectedIndex]);
-            chooseTruckNumber(node, data[selectedIndex]);
+            searchOnTruckData(node, data[selectedIndex]);
+            chooseTruckData(node, data[selectedIndex]);
           });
         } else if (mutation.type === "attributes") {
           if (mutation.attributeName === "disabled") {
             fillCustomsDeclarationNumber(mutation.target, data[selectedIndex]);
             getSchedulesButton(mutation.target);
+            addTruckButton(mutation.target, () => {
+              sendResponse({success: true, index: selectedIndex});
+              selectedIndex++;
+            });
           }
         }
       });
@@ -271,21 +267,23 @@ async function fillDatePicker(node) {
   return {isFilled: true, isOk: true};
 }
 
+let isSearching = false;
+
+let searchType;
+
 async function fillTruckNumber(node) {
   const truckNumberButton = node.querySelector("button#driver1");
 
   if (!truckNumberButton) return {isFilled: false, isOk: false};
+
+  searchType = "truckNumber";
 
   truckNumberButton.click();
 
   return {isFilled: true, isOk: true};
 }
 
-let isSearching = false;
-
-async function searchOnTruckNumber(node, data) {
-  if (isSearching) return;
-
+async function searchOnTruckData(node, data) {
   const bodyElement = node.tagName === "TBODY";
 
   if (!bodyElement) return false;
@@ -308,9 +306,7 @@ async function searchOnTruckNumber(node, data) {
 
   if (!searchInput || searchInput.value) return false;
 
-  isSearching = true;
-
-  searchInput.value = data.truckNumber;
+  searchInput.value = searchType === "truckNumber" ? data.truckNumber : data.name;
 
   searchInput.dispatchEvent(new Event("input"));
   searchInput.dispatchEvent(new Event("change"));
@@ -318,7 +314,7 @@ async function searchOnTruckNumber(node, data) {
   return true;
 }
 
-async function chooseTruckNumber(node, data) {
+async function chooseTruckData(node, data) {
   const bodyElement = node.tagName === "TBODY";
 
   if (!bodyElement) return false;
@@ -331,17 +327,58 @@ async function chooseTruckNumber(node, data) {
 
   if (!isInDataTableContainer || !isInDataTableContainer.dataset.totalElements) return false;
 
-  const selectRecord = isInDataTableContainer.querySelector("tr:first-child");
+  const selectRecord = isInDataTableContainer.querySelector("tbody tr:first-child");
 
   if (!selectRecord) return false;
 
   try {
     const obj = selectRecord.dataset.obj;
+
     const parse = JSON.parse(obj);
-    if (parse?.vehicleSequenceNumber == data.truckNumber) {
+
+    if (searchType === "truckNumber") {
+      if (parse?.vehicleSequenceNumber == data.truckNumber) {
+        selectRecord.querySelector("button").click();
+        await new Promise((resolve) => {
+          setTimeout(() => {
+            resolve();
+          }, options.truckNumber.waiting);
+        });
+        await fillTruckName(document.querySelector(".tab-pane.wizard-step.active"));
+      }
+    } else if (searchType === "truckName") {
       selectRecord.querySelector("button").click();
     }
   } catch (error) {
     console.log("error when select record", error);
   }
+}
+
+async function fillTruckName(node) {
+  const truckNameButton = node.querySelector("button#truck1");
+
+  if (!truckNameButton) return {isFilled: false, isOk: false};
+
+  searchType = "truckName";
+
+  truckNameButton.click();
+
+  return {isFilled: true, isOk: true};
+}
+
+async function addTruckButton(node, callback) {
+  const addTruckBtn = node.dataset.i18n === "add" && node.tagName === "BUTTON" && !node.disabled;
+  if (!addTruckBtn) return;
+  node.click();
+  const pledgeCheck = document.querySelector(".pledge-check input");
+  if (!pledgeCheck) return;
+  pledgeCheck.checked = true;
+  pledgeCheck.dispatchEvent(new Event("change"));
+  pledgeCheck.dispatchEvent(new Event("click"));
+
+  const button = document.querySelector(
+    "div.wizard-action-buttons button[data-i18n=submitButtonText]"
+  );
+  button.dispatchEvent(new Event("click"));
+  if (callback) callback();
 }
