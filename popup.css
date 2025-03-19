@@ -207,3 +207,13 @@ footer a {
 .stop-button:hover {
   background-color: rgba(220 53 69 / 50%);
 }
+
+.truck-entry.processed {
+  background-color: #e0ffe0; /* Light green background */
+}
+
+.truck-entry.processed .processed-icon::before {
+  content: "✓";
+  color: green;
+  margin-right: 5px;
+}

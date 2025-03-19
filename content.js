@@ -3,7 +3,7 @@ const options = {
     value: 6,
   },
   transitTimeType: {
-    value: "exit", // "entry" or "exit"
+    value: "entry", // "entry" or "exit"
     waiting: 600,
   },
   accessPort: {
@@ -27,21 +27,24 @@ const options = {
   },
 };
 
-let selectedIndex = 0;
-
 let isSearching = false;
 
 let searchType;
 
+// Flag to prevent multiple responses
+let hasResponded = false;
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "start") {
     const data = message.data;
+    const selectedIndex = message.selectedIndex || 0;
+    hasResponded = false; // Reset flag for each new message
 
     const isFilledPurpose = fillPurposeSelect();
 
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
-        console.log("mutation detect", mutation);
+        console.log("Mutation detected:", mutation);
 
         if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
           mutation.addedNodes.forEach((node) => {
@@ -52,14 +55,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             fillDatePicker(node);
             searchOnTruckData(node, data[selectedIndex]);
             chooseTruckData(node, data[selectedIndex]);
+            detectIfThereIsFinished(node);
           });
         } else if (mutation.type === "attributes") {
           if (mutation.attributeName === "disabled") {
             fillCustomsDeclarationNumber(mutation.target, data[selectedIndex]);
             getSchedulesButton(mutation.target);
             addTruckButton(mutation.target, () => {
-              sendResponse({success: true, index: selectedIndex});
-              selectedIndex++;
+              if (!hasResponded) {
+                console.log("Sending response to popup");
+                sendResponse({success: true, selectedIndex: selectedIndex + 1});
+                hasResponded = true; // Mark as responded
+              } else {
+                console.log("Response already sent, skipping");
+              }
             });
           }
         }
@@ -72,8 +81,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       attributes: true,
       attributeFilter: ["disabled"],
     });
+
+    return true; // Keep the message channel open for async response
   }
 });
+
+function isMoreThanOneModalPresent() {
+  const modals = document.querySelectorAll(".modal");
+  if (modals.length) {
+    return true;
+  }
+  return false;
+}
 
 function fillPurposeSelect() {
   const selectElement = document.querySelector(
@@ -195,11 +214,11 @@ async function detectIfThereIsNo(node) {
 
   const isAlert = node
     .querySelector("div.fasah-alert-body")
-    .innerText.includes("لا يوجد مواعيد متاحة");
+    ?.innerText.includes("لا يوجد مواعيد متاحة");
 
   const isAlertLimitExceeded = node
     .querySelector("div.fasah-alert-body")
-    .innerText.includes("تم تجاوز الحد الأقصى");
+    ?.innerText.includes("تم تجاوز الحد الأقصى");
 
   const retry = async (timer = options.modal.waiting) => {
     await new Promise((resolve) => {
@@ -227,6 +246,22 @@ async function detectIfThereIsNo(node) {
   if (!isAlert) return;
 
   retry();
+}
+
+function detectIfThereIsFinished(node) {
+  const modalElement = node.classList.contains("modal");
+
+  if (!modalElement) return false;
+
+  const isAlertIsSubmitted = node.querySelector("p[data-i18n='broker:AcceptedAppointments']");
+
+  if (!isAlertIsSubmitted) return;
+
+  const closeButton = node.querySelector("button[data-method='إغلاق']");
+
+  if (!closeButton) return;
+
+  closeButton.click();
 }
 
 async function fillDatePicker(node) {
@@ -274,7 +309,9 @@ async function fillDatePicker(node) {
 async function fillTruckNumber(node) {
   const truckNumberButton = node.querySelector("button#driver1");
 
-  if (!truckNumberButton) return {isFilled: false, isOk: false};
+  const thereIsMoreThanOneModal = isMoreThanOneModalPresent();
+
+  if (!truckNumberButton || thereIsMoreThanOneModal) return {isFilled: false, isOk: false};
 
   searchType = "truckNumber";
 
@@ -337,7 +374,11 @@ async function chooseTruckData(node, data) {
     const parse = JSON.parse(obj);
 
     if (searchType === "truckNumber") {
-      if (parse?.vehicleSequenceNumber == data.truckNumber) {
+      if (
+        parse?.plateNumberAr == data.truckNumber ||
+        parse?.plateNumberEn == data.truckNumber ||
+        parse?.vehicleSequenceNumber == data.truckNumber
+      ) {
         selectRecord.querySelector("button").click();
         await new Promise((resolve) => {
           setTimeout(() => {
@@ -347,7 +388,14 @@ async function chooseTruckData(node, data) {
         await fillTruckName(document.querySelector(".tab-pane.wizard-step.active"));
       }
     } else if (searchType === "truckName") {
-      selectRecord.querySelector("button").click();
+      console.log(
+        "selected record",
+        selectRecord,
+        isInDataTableContainer.querySelectorAll("tbody tr")
+      );
+      if (parse?.nameAr === data.name) {
+        selectRecord.querySelector("button").click();
+      }
     }
   } catch (error) {
     console.log("error when select record", error);
@@ -357,7 +405,9 @@ async function chooseTruckData(node, data) {
 async function fillTruckName(node) {
   const truckNameButton = node.querySelector("button#truck1");
 
-  if (!truckNameButton) return {isFilled: false, isOk: false};
+  const thereIsMoreThanOneModal = isMoreThanOneModalPresent();
+
+  if (!truckNameButton || thereIsMoreThanOneModal) return {isFilled: false, isOk: false};
 
   searchType = "truckName";
 
@@ -379,7 +429,6 @@ async function addTruckButton(node, callback) {
   const button = document.querySelector(
     "div.wizard-action-buttons button[data-i18n=submitButtonText]"
   );
-  button.click();
   button.dispatchEvent(new Event("click"));
   if (callback) callback();
 }

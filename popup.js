@@ -74,6 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("يرجى ملء جميع الحقول المطلوبة!");
     } else if (trucks.length > 0) {
       localStorage.setItem("truckData", JSON.stringify(trucks));
+      localStorage.setItem("selectedIndex", "0"); // Reset selectedIndex on submit
       alert("تم حفظ البيانات في التخزين المحلي!");
       startBtn.classList.remove("hidden");
     } else {
@@ -84,6 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Clear localStorage and reset UI
   clearStorageBtn.addEventListener("click", () => {
     localStorage.removeItem("truckData");
+    localStorage.setItem("selectedIndex", "0"); // Reset selectedIndex
     trucksList.innerHTML = `
       <div class="truck-entry">
         <input type="text" class="truck-name" placeholder="اسم السائق">
@@ -106,12 +108,18 @@ document.addEventListener("DOMContentLoaded", () => {
   // Start button: Fill form on specific page
   startBtn.addEventListener("click", () => {
     const truckData = JSON.parse(localStorage.getItem("truckData") || "[]");
+    const selectedIndex = JSON.parse(localStorage.getItem("selectedIndex") || "0");
     if (truckData.length === 0) {
       alert("لا توجد بيانات محفوظة للتعبئة!");
       return;
     }
 
-    revertUI();
+    if (selectedIndex >= truckData.length) {
+      alert("تم معالجة جميع الشاحنات!");
+      return;
+    }
+
+    revertUI(); // إخفاء المدخلات وإظهار التحميل
 
     chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
       const currentTab = tabs[0];
@@ -124,15 +132,29 @@ document.addEventListener("DOMContentLoaded", () => {
           {
             action: "start",
             data: truckData,
+            selectedIndex: +selectedIndex,
           },
           (response) => {
             if (response && response.success) {
+              console.log("response.success", response);
+              const processedIndex = selectedIndex; // الشاحنة التي تمت معالجتها
+              localStorage.setItem("selectedIndex", response.selectedIndex); // الفهرس التالي
+              const processedEntry = document.querySelector(
+                `.truck-entry[data-index="${processedIndex}"]`
+              );
+              if (processedEntry) {
+                processedEntry.classList.add("processed");
+              }
+              revertUI(); // إظهار المدخلات مرة أخرى
             } else {
+              console.log("response.error", response);
+              revertUI(); // إظهار المدخلات حتى في حالة الخطأ
             }
           }
         );
       } else {
         alert("يرجى فتح الصفحة المستهدفة: " + targetUrlPattern);
+        revertUI(); // إظهار المدخلات إذا لم يتطابق URL
       }
     });
   });
@@ -162,17 +184,22 @@ document.addEventListener("DOMContentLoaded", () => {
   // Load stored data on startup
   function loadStoredData() {
     const storedData = localStorage.getItem("truckData");
+    const selectedIndex = JSON.parse(localStorage.getItem("selectedIndex") || "0");
     if (storedData) {
       const trucks = JSON.parse(storedData);
       trucksList.innerHTML = "";
       trucks.forEach((truck, index) => {
         const truckEntry = document.createElement("div");
         truckEntry.className = "truck-entry";
+        truckEntry.dataset.index = index; // Add data-index attribute
+        if (index < selectedIndex) {
+          truckEntry.classList.add("processed"); // Mark as processed if index < selectedIndex
+        }
         truckEntry.innerHTML = `
           <input type="text" class="truck-name" value="${truck.name}" placeholder="اسم السائق">
-           <input type="text" class="truck-number" value="${
-             truck.truckNumber
-           }" placeholder="رقم السيارة">
+          <input type="text" class="truck-number" value="${
+            truck.truckNumber
+          }" placeholder="رقم السيارة">
           <input type="text" class="truck-declaration-number" value="${
             truck.customsDeclarationNumber
           }" placeholder="رقم البيان الجمركى">
