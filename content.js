@@ -220,6 +220,10 @@ async function detectIfThereIsNo(node) {
     .querySelector("div.fasah-alert-body")
     ?.innerText.includes("تم تجاوز الحد الأقصى");
 
+  const isAlertErrorOcured = node
+    .querySelector("div.fasah-alert-body")
+    ?.innerText.includes("لقد حصل خطأ في النظام");
+
   const retry = async (timer = options.modal.waiting) => {
     await new Promise((resolve) => {
       setTimeout(() => {
@@ -238,8 +242,8 @@ async function detectIfThereIsNo(node) {
     getSchedulesButton(document.querySelector("button[data-i18n='tms:getSchedules']"));
   };
 
-  if (isAlertLimitExceeded) {
-    retry(60000);
+  if (isAlertLimitExceeded || isAlertErrorOcured) {
+    retry();
     return;
   }
 
