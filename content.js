@@ -243,6 +243,11 @@ async function detectIfThereIsNo(node) {
   };
 
   if (isAlertLimitExceeded || isAlertErrorOcured) {
+    retry(60000);
+    return;
+  }
+
+  if (isAlertErrorOcured) {
     retry();
     return;
   }
@@ -433,6 +438,7 @@ async function addTruckButton(node, callback) {
   const button = document.querySelector(
     "div.wizard-action-buttons button[data-i18n=submitButtonText]"
   );
+  button.click();
   button.dispatchEvent(new Event("click"));
   if (callback) callback();
 }
