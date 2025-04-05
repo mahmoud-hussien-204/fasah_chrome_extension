@@ -137,7 +137,7 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
       const getScheduleData = await apiGetSchedule();
 
       if (getScheduleData) {
-        const getInfoData = await apiGetInfo(fakeData[0]);
+        const getInfoData = await apiGetInfo(message.data[0]);
         if (getInfoData?.driver && getInfoData.truck && getInfoData.data) {
           const createAppointmentResponse = await createAppointment(getInfoData);
           console.log("response createAppointmentResponse", createAppointmentResponse);
