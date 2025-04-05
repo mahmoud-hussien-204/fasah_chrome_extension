@@ -42,13 +42,13 @@ const api = async (path, requestInit = {}, baseUrl = apiBaseUrls.baseUrl) => {
 
 const apiGetSchedule = async () => {
   const searchParams = new URLSearchParams({
-    type: "TRANSIT",
     economicOperator: null,
+    type: "TRANSIT",
     // ***
-    // departure: "KFC",
-    // arrival: 31,
+    departure: "KFC",
+    arrival: 31,
     // **** for exit (test)
-    finalDest: 95,
+    // finalDest: 95,
   });
 
   const response = await api(`zone/schedule/land?${searchParams.toString()}`);
