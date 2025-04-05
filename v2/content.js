@@ -40,7 +40,13 @@ const api = async (path, requestInit = {}, baseUrl = apiBaseUrls.baseUrl) => {
   return responseJson;
 };
 
-const apiGetSchedule = async () => {
+const apiGetSchedule = async (sendResponse) => {
+  if (sendResponse) {
+    sendResponse({
+      status: "loading",
+      message: "جاري البحث عن مواعيد...",
+    });
+  }
   const searchParams = new URLSearchParams({
     economicOperator: null,
     type: "TRANSIT",
@@ -71,7 +77,11 @@ const apiGetSchedule = async () => {
   }
 };
 
-const apiGetInfo = async (user) => {
+const apiGetInfo = async (user, sendResponse) => {
+  sendResponse({
+    status: "loading",
+    message: "جاري البحث عن معلومات السائق... والشاحنة",
+  });
   const truckSearchParams = new URLSearchParams({
     finalDestination: 95,
     finalDestinationTime: getTomorrowDate(),
@@ -103,7 +113,11 @@ const apiGetInfo = async (user) => {
   };
 };
 
-const createAppointment = async (appointment) => {
+const createAppointment = async (appointment, sendResponse) => {
+  sendResponse({
+    status: "loading",
+    message: "جاري حجز الموعد...",
+  });
   const payload = {
     purpose: "6",
     fleet_info: [
@@ -137,25 +151,31 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
       break;
     }
     case "start": {
-      const getScheduleData = await apiGetSchedule();
+      const getScheduleData = await apiGetSchedule(sendResponse);
 
       if (getScheduleData) {
-        const getInfoData = await apiGetInfo(message.data?.[0]);
+        const getInfoData = await apiGetInfo(message?.data?.[0], sendResponse);
         if (getInfoData?.driver && getInfoData.truck && getInfoData.data) {
-          const createAppointmentResponse = await createAppointment({
-            ...getInfoData,
-            schedule: getScheduleData,
+          const createAppointmentResponse = await createAppointment(
+            {
+              ...getInfoData,
+              schedule: getScheduleData,
+            },
+            sendResponse
+          );
+          sendResponse({
+            status: "done",
+            message: "تم حجز الموعد بنجاح",
           });
         }
       }
 
-      sendResponse({
-        status: "success",
-      });
       break;
     }
     default: {
       break;
     }
   }
+
+  return true;
 });
