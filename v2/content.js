@@ -48,6 +48,8 @@ const apiGetSchedule = async (sendResponse) => {
       message: "جاري البحث عن مواعيد...",
     });
   }
+  console.log("get schedule");
+
   const searchParams = new URLSearchParams({
     economicOperator: null,
     type: "TRANSIT",
@@ -147,6 +149,8 @@ const createAppointment = async (appointment, sendResponse) => {
 };
 
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+  console.log("message.action", message);
+
   switch (message.action) {
     case "stop": {
       break;
