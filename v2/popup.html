@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Fasah</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div id="container">
+      <h2 class="title">مرحبا بك فى فسح</h2>
+      <section class="trucks">
+        <h5 class="trucks-title">ادخل بيانات الشاحنات</h5>
+        <div id="trucks-list" class="trucks-list">
+          <!-- Initial pair of input fields -->
+          <div class="truck-entry" data-index="0">
+            <input type="text" class="truck-name" placeholder="اسم السائق" autofocus />
+            <input type="text" class="truck-number" placeholder="رقم السيارة" />
+            <input type="text" class="truck-declaration-number" placeholder="رقم البيان الجمركى" />
+            <div class="flex items-center truck-actions">
+              <button class="delete-truck">x</button>
+              <button class="add-truck">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- actions buttons area  -->
+        <div class="flex items-center truck-list-actions">
+          <button id="submit" class="save-trucks">حفظ البيانات</button>
+          <button id="clear-storage" class="clear-trucks">مسح البيانات المحفوظة</button>
+          <button id="start" class="start-button hidden">بدء ملئ البيانات</button>
+        </div>
+      </section>
+
+      <!-- loading area  -->
+      <div id="loading" class="hidden">
+        <p>جارٍ تعبئة البيانات...</p>
+        <button id="stop" class="stop-button">وقف تعبئة البيانات</button>
+      </div>
+
+      <footer>
+        تمت البرمجة بواسطة <a href="https://wa.me/+201159258110" target="_blank">محمود حسين</a>
+      </footer>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>
