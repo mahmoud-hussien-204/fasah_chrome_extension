@@ -31,6 +31,7 @@ const api = async (path, requestInit = {}, baseUrl = apiBaseUrls.baseUrl) => {
 
   const response = await fetch(`${baseUrl}${path}`, {
     method: "GET",
+    ...requestInit,
     headers: {
       ...headers,
       ...requestInit?.headers,

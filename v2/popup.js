@@ -8,6 +8,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let isFillingForm = false;
 
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log("Update from background:", message);
+  });
+
   // Load existing data from localStorage and set initial Start button state
   loadStoredData();
 
@@ -135,21 +139,23 @@ document.addEventListener("DOMContentLoaded", () => {
             selectedIndex: +selectedIndex,
           },
           (response) => {
-            if (response && response.success) {
-              console.log("response.success", response);
-              const processedIndex = selectedIndex; // الشاحنة التي تمت معالجتها
-              localStorage.setItem("selectedIndex", response.selectedIndex); // الفهرس التالي
-              const processedEntry = document.querySelector(
-                `.truck-entry[data-index="${processedIndex}"]`
-              );
-              if (processedEntry) {
-                processedEntry.classList.add("processed");
-              }
-              revertUI(); // إظهار المدخلات مرة أخرى
-            } else {
-              console.log("response.error", response);
-              revertUI(); // إظهار المدخلات حتى في حالة الخطأ
-            }
+            console.log("response from here", response);
+
+            // if (response && response.success) {
+            //   console.log("response.success", response);
+            //   const processedIndex = selectedIndex; // الشاحنة التي تمت معالجتها
+            //   localStorage.setItem("selectedIndex", response.selectedIndex); // الفهرس التالي
+            //   const processedEntry = document.querySelector(
+            //     `.truck-entry[data-index="${processedIndex}"]`
+            //   );
+            //   if (processedEntry) {
+            //     processedEntry.classList.add("processed");
+            //   }
+            //   revertUI(); // إظهار المدخلات مرة أخرى
+            // } else {
+            //   console.log("response.error", response);
+            //   revertUI(); // إظهار المدخلات حتى في حالة الخطأ
+            // }
           }
         );
       } else {
