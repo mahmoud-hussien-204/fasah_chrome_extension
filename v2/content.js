@@ -73,7 +73,7 @@ const apiGetSchedule = async (sendResponse) => {
   // error response
   if (response?.success === false) {
     if (response?.errors?.[0]?.message.includes("تم تجاوز الحد الأقصى")) {
-      await new Promise((resolve) => setTimeout(resolve, 60000));
+      // await new Promise((resolve) => setTimeout(resolve, 60000));
       return apiGetSchedule();
     }
     return apiGetSchedule();
