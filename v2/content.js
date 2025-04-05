@@ -124,6 +124,9 @@ const createAppointment = async (appointment) => {
   const response = await api("appointment/transit/create", {
     method: "POST",
     body: JSON.stringify(payload),
+    headers: {
+      "Content-Type": "application/json",
+    },
   });
   return response;
 };
@@ -140,7 +143,6 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
         const getInfoData = await apiGetInfo(message.data[0]);
         if (getInfoData?.driver && getInfoData.truck && getInfoData.data) {
           const createAppointmentResponse = await createAppointment(getInfoData);
-          console.log("response createAppointmentResponse", createAppointmentResponse);
         }
       }
 
