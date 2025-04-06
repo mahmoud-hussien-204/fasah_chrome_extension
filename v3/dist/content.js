@@ -1,0 +1,1 @@
+chrome.runtime.onMessage.addListener((s,a,t)=>{var e;switch(s.action){case"getToken":{const n=(e=document.cookie.split("; ").find(o=>o.startsWith("fsession=")))==null?void 0:e.split("=")[1];t({status:"success",message:"getToken",data:{token:n}});break}}return!0});
