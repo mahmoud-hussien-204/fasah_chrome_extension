@@ -23,8 +23,8 @@ const api = async (
   baseUrl = apiBaseUrls.baseUrl
 ) => {
   const headers = {
-    Accept: "application/json",
     "Accept-Language": "ar",
+    Accept: "application/json",
     token: decodeURIComponent(token),
   };
 
@@ -43,31 +43,86 @@ const api = async (
 };
 
 document.addEventListener("DOMContentLoaded", () => {
+  data = JSON.parse(localStorage.getItem("truckData") || "[]");
+
+  loadStoredData();
+
   const startBtn = document.getElementById("start-btn");
 
-  // const stopBtn = document.getElementById("stop-btn");
+  const stopBtn = document.getElementById("stop-btn");
 
   startBtn?.addEventListener("click", startFillingForm);
+
+  stopBtn?.addEventListener("click", stopFillingForm);
 });
 
-async function startFillingForm() {
-  // show loading spinner
-  toggleLoadingSpinner();
-  setLoadingSpinnerMessage("جاري معالجة البيانات...");
-  toggleFormEnabling();
-  await tabGetToken();
-  const savedData = saveFormData();
-  if (savedData) {
-    makeApiRequests();
+function loadStoredData() {
+  if (data && data.length) {
+    const trucksList = document.getElementById("trucks-list");
+    if (!trucksList) return;
+    trucksList.innerHTML = "";
+    data.forEach((truck, index) => {
+      const truckEntry = document.createElement("li");
+      truckEntry.className = "flex gap-4 truck-item";
+      truckEntry.innerHTML = `
+         <input
+            type="text"
+            id="truck-name"
+            class="min-w-0 input input-bordered flex-1 h-[2.5rem] rounded-md"
+            placeholder="اسم السائق"
+            ${index === 0 ? "autofocus" : ""}
+            value="${truck.name}"
+          />
+          <input
+            type="text"
+            id="truck-number"
+            class="min-w-0 input input-bordered flex-1 h-[2.5rem] rounded-md"
+            placeholder="رقم السيارة"
+            value="${truck.truckNumber}"
+          />
+          <input
+            type="text"
+            id="truck-declaration-number"
+            class="min-w-0 input input-bordered flex-1 h-[2.5rem] rounded-md"
+            placeholder="رقم البيان الجمركى"
+            value="${truck.customsDeclarationNumber}"
+          />
+      `;
+      trucksList.appendChild(truckEntry);
+    });
   }
 }
 
-function toggleLoadingSpinner() {
+async function startFillingForm() {
+  const stopBtn = document.getElementById("stop-btn");
+  fillingCompletedSuccessfully(false);
+  stopBtn?.classList.remove("hidden");
+  // show loading spinner
+  toggleLoadingSpinner(true);
+  setLoadingSpinnerMessage("جاري معالجة البيانات...");
+  toggleFormEnabling("disable");
+  await tabGetToken();
+  let savedData = false;
+  if (!data || !data.length) {
+    savedData = saveFormData();
+  } else {
+    savedData = true;
+  }
+  if (savedData) {
+    await makeApiRequests();
+  }
+}
+
+async function stopFillingForm() {
+  window.location.reload();
+}
+
+function toggleLoadingSpinner(show: boolean) {
   const loadingSpinner = document.getElementById("filling-loading");
-  if (loadingSpinner?.classList.contains("hidden")) {
+  if (show) {
     loadingSpinner?.classList.remove("hidden");
     loadingSpinner?.classList.add("flex");
-  } else if (loadingSpinner?.classList.contains("flex")) {
+  } else {
     loadingSpinner?.classList.remove("flex");
     loadingSpinner?.classList.add("hidden");
   }
@@ -77,23 +132,27 @@ function setLoadingSpinnerMessage(message: string) {
   document.getElementById("message")!.innerText = message;
 }
 
-function toggleFormEnabling() {
+function toggleFormEnabling(action: "enable" | "disable") {
   const form = document.getElementById("form");
   const inputs = form?.querySelectorAll("input");
-  const submitBtn = form?.querySelector("button#start-btn") as HTMLButtonElement;
 
   inputs?.forEach((input) => {
-    if (input.disabled) {
+    if (action === "enable") {
       input.disabled = false;
-    } else {
+    } else if (action === "disable") {
       input.disabled = true;
     }
   });
 
-  if (submitBtn?.disabled) {
-    submitBtn.disabled = false;
-  } else {
-    submitBtn.disabled = true;
+  toggleStartBtnEnabling(action);
+}
+
+function toggleStartBtnEnabling(action: "enable" | "disable") {
+  const startBtn = document.getElementById("start-btn") as HTMLButtonElement;
+  if (action === "enable") {
+    startBtn.disabled = false;
+  } else if (action === "disable") {
+    startBtn.disabled = true;
   }
 }
 
@@ -114,11 +173,7 @@ async function tabGetToken() {
 }
 
 function saveFormData() {
-  const trucks: {
-    name: string;
-    truckNumber: string;
-    customsDeclarationNumber: string;
-  }[] = [];
+  const trucks: typeof data = [];
 
   let hasError = false;
 
@@ -196,8 +251,32 @@ const apiGetSchedule = async () => {
   // error response
   if (response?.success === false) {
     if (response?.errors?.[0]?.message.includes("تم تجاوز الحد الأقصى")) {
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-      return apiGetSchedule();
+      let refillingIsClicked = false;
+      setLoadingSpinnerMessage(
+        " تم تجاوز الحد الأقصى هنستنى 15 ثواني وبعدين نعيد المحاولة لو مش هتستنى انت تقدر "
+      );
+      const refillingForm = document.createElement("button");
+      refillingForm.innerText = "تضغط هنا";
+      refillingForm.classList.add("text-primary", "cursor-pointer");
+      refillingForm.addEventListener("click", () => {
+        refillingIsClicked = true;
+        startFillingForm();
+      });
+      const message = document.getElementById("message");
+      message?.appendChild(refillingForm);
+      const fiveSecondWaiting = await new Promise((resolve) =>
+        setTimeout(() => {
+          if (refillingIsClicked) {
+            resolve(false);
+          } else {
+            resolve(true);
+          }
+        }, 15000)
+      );
+      if (fiveSecondWaiting) {
+        return apiGetSchedule();
+      }
+      return;
     }
     return apiGetSchedule();
   }
@@ -280,16 +359,22 @@ async function makeApiRequests() {
         schedule: getScheduleData,
       });
       if (createAppointmentResponse) {
-        fillingCompletedSuccessfully();
+        fillingCompletedSuccessfully(true);
+        toggleFormEnabling("enable");
+        toggleLoadingSpinner(false);
+        document.getElementById("stop-btn")?.classList.add("hidden");
       }
     }
   }
 }
 
-function fillingCompletedSuccessfully() {
+function fillingCompletedSuccessfully(show: boolean) {
   const alert = document.getElementById("success-alert");
-  alert?.classList.add("block");
-  alert?.classList.remove("hidden");
-  toggleLoadingSpinner();
-  toggleFormEnabling();
+  if (show) {
+    alert?.classList.add("flex");
+    alert?.classList.remove("hidden");
+  } else {
+    alert?.classList.add("hidden");
+    alert?.classList.remove("flex");
+  }
 }

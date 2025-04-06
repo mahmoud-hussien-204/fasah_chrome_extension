@@ -6,7 +6,8 @@
   "permissions": [
     "storage",
     "activeTab",
-    "scripting"
+    "scripting",
+    "declarativeNetRequest"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -25,6 +26,16 @@
     }
   ],
   "host_permissions": [
-    "https://tms.tabadul.sa/*"
-  ]
+    "https://tms.tabadul.sa/*",
+    "https://oga.fasah.sa/*"
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  }
 }

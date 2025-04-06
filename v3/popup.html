@@ -27,13 +27,13 @@
           d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
         />
       </svg>
-      <span>تم حجز الموعد بنجاح</span>
+      <span class="text-lg">تم حجز الموعد بنجاح</span>
     </div>
 
     <form id="form">
       <h1 class="text-xl font-semibold mb-6">ادخل بيانات الشاحنات</h1>
 
-      <ul class="mb-4">
+      <ul class="mb-4" id="trucks-list">
         <li class="flex gap-4 truck-item">
           <input
             type="text"
@@ -41,21 +41,18 @@
             class="min-w-0 input input-bordered flex-1 h-[2.5rem] rounded-md"
             placeholder="اسم السائق"
             autofocus
-            value="الصادق عبدالعظيم"
           />
           <input
             type="text"
             id="truck-number"
             class="min-w-0 input input-bordered flex-1 h-[2.5rem] rounded-md"
             placeholder="رقم السيارة"
-            value="6363"
           />
           <input
             type="text"
             id="truck-declaration-number"
             class="min-w-0 input input-bordered flex-1 h-[2.5rem] rounded-md"
             placeholder="رقم البيان الجمركى"
-            value="248079"
           />
         </li>
       </ul>
@@ -68,7 +65,10 @@
       </div>
     </form>
 
-    <div id="filling-loading" class="flex-col items-center justify-center gap-4 mt-8 hidden">
+    <div
+      id="filling-loading"
+      class="flex-col items-center justify-center text-center gap-4 mt-8 hidden"
+    >
       <span class="loading loading-spinner loading-lg"></span>
       <h3 id="message" class="font-semibold text-xl"></h3>
     </div>
