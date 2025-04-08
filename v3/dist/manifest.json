@@ -37,5 +37,6 @@
         "path": "rules.json"
       }
     ]
-  }
+  },
+  "incognito": "split"
 }

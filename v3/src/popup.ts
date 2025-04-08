@@ -95,21 +95,34 @@ function loadStoredData() {
 
 async function startFillingForm() {
   const stopBtn = document.getElementById("stop-btn");
-  fillingCompletedSuccessfully(false);
-  stopBtn?.classList.remove("hidden");
-  // show loading spinner
-  toggleLoadingSpinner(true);
-  setLoadingSpinnerMessage("جاري معالجة البيانات...");
-  toggleFormEnabling("disable");
-  await tabGetToken();
-  let savedData = false;
-  if (!data || !data.length) {
-    savedData = saveFormData();
-  } else {
-    savedData = true;
-  }
-  if (savedData) {
-    await makeApiRequests();
+  try {
+    fillingCompletedSuccessfully(false);
+    stopBtn?.classList.remove("hidden");
+    // show loading spinner
+    toggleLoadingSpinner(true);
+    setLoadingSpinnerMessage("جاري معالجة البيانات...");
+    toggleFormEnabling("disable");
+    await tabGetToken();
+    let savedData = false;
+    if (!data || !data.length) {
+      savedData = saveFormData();
+    } else {
+      savedData = true;
+    }
+    if (savedData) {
+      await makeApiRequests();
+    }
+  } catch (err) {
+    toggleLoadingSpinner(false);
+    const alertError = document.getElementById("error-alert");
+    alertError?.classList.remove("hidden");
+    alertError?.classList.add("flex");
+    const errorMsgElement = alertError?.querySelector("#error-alert-msg");
+    if (errorMsgElement) {
+      errorMsgElement.textContent = err as string;
+    }
+    toggleFormEnabling("enable");
+    stopBtn?.classList.add("hidden");
   }
 }
 
@@ -157,15 +170,17 @@ function toggleStartBtnEnabling(action: "enable" | "disable") {
 }
 
 async function tabGetToken() {
-  await new Promise((resolve) => {
+  await new Promise((resolve, reject) => {
     chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
       const currentTab = tabs[0];
       chrome.tabs.sendMessage(currentTab.id!, {action: "getToken"}, (response) => {
-        if (response.status === "success") {
+        if (response?.status === "success") {
           if (response.message === "getToken") {
             token = response.data.token;
             resolve(true);
           }
+        } else {
+          reject("لا يوجد توكن الرجاء تسجيل الدخول من تانى");
         }
       });
     });
