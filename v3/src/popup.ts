@@ -103,12 +103,7 @@ async function startFillingForm() {
     setLoadingSpinnerMessage("جاري معالجة البيانات...");
     toggleFormEnabling("disable");
     await tabGetToken();
-    let savedData = false;
-    if (!data || !data.length) {
-      savedData = saveFormData();
-    } else {
-      savedData = true;
-    }
+    const savedData = saveFormData();
     if (savedData) {
       await makeApiRequests();
     }
