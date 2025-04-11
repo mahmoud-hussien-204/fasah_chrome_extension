@@ -108,6 +108,9 @@ async function startFillingForm() {
       await makeApiRequests();
     }
   } catch (err) {
+    const infoAlert = document.getElementById("info-alert");
+    infoAlert?.classList.remove("flex");
+    infoAlert?.classList.add("hidden");
     toggleLoadingSpinner(false);
     const alertError = document.getElementById("error-alert");
     alertError?.classList.remove("hidden");
@@ -242,10 +245,10 @@ const apiGetSchedule = async () => {
     economicOperator: "",
     type: "TRANSIT",
     // ***
-    departure: "KFC",
-    arrival: "31",
+    // departure: "KFC",
+    // arrival: "31",
     // **** for exit (test)
-    // finalDest: "95",
+    finalDest: "95",
   });
 
   const response = await api(`zone/schedule/land?${searchParams.toString()}`);
@@ -318,9 +321,39 @@ const apiGetInfo = async (user: (typeof data)[0]) => {
     apiBaseUrls.fleetBaseUrl
   );
 
+  if (!truckResponse?.content?.[0] || !driverResponse?.content?.[0]) {
+    throw new Error("يوجد خطأ فى معلومات السائق والشاحنة");
+  }
+
+  const findTrucks = truckResponse.content.filter(
+    (truck: any) => truck.plateNumberAr.trim() === user.truckNumber
+  );
+
+  const findDrivers = driverResponse.content.filter(
+    (driver: any) => driver.nameAr.trim() === user.name
+  );
+
+  const infoAlert = document.getElementById("info-alert");
+
+  if (findTrucks.length > 1 || findDrivers.length > 1) {
+    if (infoAlert) {
+      infoAlert.classList.remove("hidden");
+      infoAlert.classList.add("flex");
+      const infoAlertMsg = infoAlert.querySelector("#info-alert-msg");
+      if (findTrucks.length > 1 && infoAlertMsg) {
+        infoAlertMsg.textContent =
+          "يوجد اكتر من شاحنه بنفس رقم السيارة علشان الوقت انا اختارتلك اول سيارة ليها نفس الرقم";
+      }
+      if (findDrivers.length > 1 && infoAlertMsg) {
+        infoAlertMsg.textContent +=
+          "يوجد اكتر من سائق بنفس الاسم علشان الوقت انا اختارتلك اول سائق ليها نفس الاسم";
+      }
+    }
+  }
+
   return {
-    truck: truckResponse.content?.[0],
-    driver: driverResponse.content?.[0],
+    truck: findTrucks?.[0],
+    driver: findDrivers?.[0],
     data: user,
   };
 };
@@ -356,6 +389,13 @@ const createAppointment = async (appointment: {
       "Content-Type": "application/json",
     },
   });
+
+  if (!response.success) {
+    if (Array.isArray(response.errors)) {
+      throw new Error(response.errors?.[0]?.message);
+    }
+    throw new Error("حدث خطاء فى حجز الموعد");
+  }
   return response;
 };
 
@@ -368,6 +408,7 @@ async function makeApiRequests() {
         ...getInfoData,
         schedule: getScheduleData,
       });
+
       if (createAppointmentResponse) {
         fillingCompletedSuccessfully(true);
         toggleFormEnabling("enable");
