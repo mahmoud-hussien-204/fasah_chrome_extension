@@ -351,6 +351,14 @@ const apiGetInfo = async (user: (typeof data)[0]) => {
     }
   }
 
+  if (!findTrucks?.[0]) {
+    throw new Error(`لم يتم العثور على شاحنة برقم السيارة ${user.truckNumber}`);
+  }
+
+  if (!findDrivers?.[0]) {
+    throw new Error(`لم يتم العثور على سائق بالاسم ${user.name}`);
+  }
+
   return {
     truck: findTrucks?.[0],
     driver: findDrivers?.[0],
