@@ -245,10 +245,10 @@ const apiGetSchedule = async () => {
     economicOperator: "",
     type: "TRANSIT",
     // ***
-    // departure: "KFC",
-    // arrival: "31",
+    departure: "KFC",
+    arrival: "31",
     // **** for exit (test)
-    finalDest: "95",
+    // finalDest: "95",
   });
 
   const response = await api(`zone/schedule/land?${searchParams.toString()}`);
