@@ -9,6 +9,7 @@ let data: {
 const apiBaseUrls = {
   baseUrl: "https://tms.tabadul.sa/api/appointment/tas/v2/",
   fleetBaseUrl: "https://tms.tabadul.sa/api/fleet/v2/",
+  mockBaseUrl: "https://67fbc19b1f8b41c81684c4e8.mockapi.io/api/fasah/v1/",
 };
 
 const getTomorrowDate = () => {
@@ -241,7 +242,7 @@ function saveFormData() {
 const apiGetSchedule = async () => {
   setLoadingSpinnerMessage("جارى البحث عن مواعيد...");
 
-  const searchParams = new URLSearchParams({
+  const payload = {
     economicOperator: "",
     type: "TRANSIT",
     // ***
@@ -249,7 +250,9 @@ const apiGetSchedule = async () => {
     arrival: "31",
     // **** for exit (test)
     // finalDest: "95",
-  });
+  };
+
+  const searchParams = new URLSearchParams(payload);
 
   const response = await api(`zone/schedule/land?${searchParams.toString()}`);
 
@@ -258,6 +261,15 @@ const apiGetSchedule = async () => {
     // get the third last element from the array if there is more than 3 elements
     const schedules = response.schedules;
     const schedule = schedules.length > 3 ? schedules[schedules.length - 3] : schedules[0];
+
+    await fetch(`${apiBaseUrls.mockBaseUrl}/schedule`, {
+      method: "POST",
+      body: JSON.stringify({response: schedule, payload}),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
     return schedule;
   }
 
@@ -321,16 +333,20 @@ const apiGetInfo = async (user: (typeof data)[0]) => {
     apiBaseUrls.fleetBaseUrl
   );
 
-  if (!truckResponse?.content?.[0] || !driverResponse?.content?.[0]) {
-    throw new Error("يوجد خطأ فى معلومات السائق والشاحنة");
+  if (!truckResponse?.content?.[0]) {
+    throw new Error("يوجد خطأ فى معلومات الشاحنة");
+  }
+
+  if (!driverResponse?.content?.[0]) {
+    throw new Error("يوجد خطأ فى معلومات السائق");
   }
 
   const findTrucks = truckResponse.content.filter(
-    (truck: any) => truck.plateNumberAr.trim() === user.truckNumber
+    (truck: any) => truck.plateNumberAr.trim() === user.truckNumber.trim()
   );
 
-  const findDrivers = driverResponse.content.filter(
-    (driver: any) => driver.nameAr.trim() === user.name
+  const findDrivers = driverResponse.content.filter((driver: any) =>
+    (driver.nameAr as string).trim().startsWith(user.name.trim())
   );
 
   const infoAlert = document.getElementById("info-alert");
@@ -359,6 +375,27 @@ const apiGetInfo = async (user: (typeof data)[0]) => {
     throw new Error(`لم يتم العثور على سائق بالاسم ${user.name}`);
   }
 
+  await fetch(`${apiBaseUrls.mockBaseUrl}/get-info`, {
+    method: "POST",
+    body: JSON.stringify({
+      response: {
+        truck: findTrucks?.[0],
+        driver: findDrivers?.[0],
+        data: user,
+        truckResponse,
+        driverResponse,
+      },
+      payload: {
+        finalDestination: "95",
+        finalDestinationTime: getTomorrowDate(),
+        q: user.truckNumber,
+      },
+    }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
   return {
     truck: findTrucks?.[0],
     driver: findDrivers?.[0],
@@ -374,21 +411,21 @@ const createAppointment = async (appointment: {
 }) => {
   setLoadingSpinnerMessage("جاري حجز الموعد...");
   const payload = {
+    declaration_number: appointment.data.customsDeclarationNumber,
+    port_code: appointment.schedule.port_code,
+    zone_schedule_id: appointment.schedule.zone_schedule_id,
+    bayan_appointment: {},
+    cargo_type: "",
     purpose: "6",
     fleet_info: [
       {
-        licenseNo: appointment.driver.licenseNo,
-        residentCountry: appointment.driver.residentCountry,
-        plateCountry: appointment.truck.plateCountry,
-        vehicleSequenceNumber: appointment.truck.vehicleSequenceNumber,
         chassisNo: appointment.truck.chassisNo,
+        licenseNo: appointment.driver.licenseNo,
+        plateCountry: appointment.truck.plateCountry,
+        residentCountry: appointment.driver.residentCountry,
+        vehicleSequenceNumber: appointment.truck.vehicleSequenceNumber,
       },
     ],
-    transit: {
-      transit_port_code: appointment.schedule.port_code,
-      transit_schedule_id: appointment.schedule.zone_schedule_id,
-    },
-    declaration_number: appointment.data.customsDeclarationNumber,
   };
   const response = await api("appointment/transit/create", {
     method: "POST",
@@ -398,11 +435,23 @@ const createAppointment = async (appointment: {
     },
   });
 
+  await fetch(`${apiBaseUrls.mockBaseUrl}/create-schedual`, {
+    method: "POST",
+    body: JSON.stringify({
+      response,
+      payload: {...payload, appointmentData: appointment.data},
+    }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
   if (!response.success) {
     if (Array.isArray(response.errors)) {
       throw new Error(response.errors?.[0]?.message);
+    } else {
+      throw new Error("حدث خطاء فى حجز الموعد");
     }
-    throw new Error("حدث خطاء فى حجز الموعد");
   }
   return response;
 };
