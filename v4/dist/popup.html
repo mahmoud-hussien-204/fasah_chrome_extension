@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Popup</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <script type="module" crossorigin src="/popup.js"></script>
+    <link rel="stylesheet" crossorigin href="/popup.css">
+  </head>
+  <body class="p-8 w-[600px] bg-white">
+    <div role="alert" class="alert alert-success hidden mb-8" id="success-alert">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-6 w-6 shrink-0 stroke-current"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      <span class="text-lg">تم حجز الموعد بنجاح</span>
+    </div>
+
+    <div role="alert" class="alert alert-error hidden mb-8" id="error-alert">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-6 w-6 shrink-0 stroke-current"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      <span class="text-lg" id="error-alert-msg"></span>
+    </div>
+
+    <div role="alert" class="alert alert-info hidden mb-8" id="info-alert">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        class="h-6 w-6 shrink-0 stroke-current"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        ></path>
+      </svg>
+      <span class="text-lg" id="info-alert-msg"></span>
+    </div>
+
+    <form id="form">
+      <h1 class="text-xl font-semibold mb-6">ادخل بيانات الشاحنات</h1>
+
+      <ul class="mb-4" id="trucks-list">
+        <li class="flex gap-4 truck-item">
+          <input
+            type="text"
+            id="truck-name"
+            class="min-w-0 input input-bordered flex-1 h-[2.5rem] rounded-md"
+            placeholder="اسم السائق"
+            autofocus
+          />
+          <input
+            type="text"
+            id="truck-number"
+            class="min-w-0 input input-bordered flex-1 h-[2.5rem] rounded-md"
+            placeholder="رقم السيارة"
+          />
+          <input
+            type="text"
+            id="truck-declaration-number"
+            class="min-w-0 input input-bordered flex-1 h-[2.5rem] rounded-md"
+            placeholder="رقم البيان الجمركى"
+          />
+        </li>
+      </ul>
+
+      <div class="flex items-start gap-4">
+        <button type="submit" id="start-btn" class="btn btn-primary flex-1">
+          بدء ملئ البيانات
+        </button>
+        <button type="button" id="stop-btn" class="btn btn-error hidden">ايقاف البرنامج</button>
+      </div>
+    </form>
+
+    <div
+      id="filling-loading"
+      class="flex-col items-center justify-center text-center gap-4 mt-8 hidden"
+    >
+      <span class="loading loading-spinner loading-lg"></span>
+      <h3 id="message" class="font-semibold text-xl"></h3>
+    </div>
+  </body>
+</html>
