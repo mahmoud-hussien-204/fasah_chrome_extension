@@ -37,8 +37,6 @@ chrome.runtime.onMessage.addListener((message, _, sendResponse) => {
 function funcObserveSchedule(userData: any) {
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
-      console.log("mutation", mutation);
-
       if (observers.gettenSchedule) return;
       if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
         const addedNode = mutation.addedNodes[0];
@@ -192,6 +190,16 @@ const apiGetInfo = async (user: any) => {
       ])
     );
 
-    console.log("findTrucks", findTrucks, findDrivers);
+    const pledgeCheck = document.querySelector(".pledge-check input");
+    if (!pledgeCheck) return;
+    // @ts-expect-error fff
+    pledgeCheck.checked = true;
+    pledgeCheck.dispatchEvent(new Event("change"));
+    pledgeCheck.dispatchEvent(new Event("click"));
+
+    const button = document.querySelector(
+      "div.wizard-action-buttons button[data-i18n=submitButtonText]"
+    ) as HTMLButtonElement;
+    button.click();
   }
 };
