@@ -36,6 +36,8 @@ chrome.runtime.onMessage.addListener((message, _, sendResponse) => {
 
 function funcObserveSchedule(userData: any) {
   const observer = new MutationObserver((mutations) => {
+    console.log("mutations", mutations);
+
     mutations.forEach((mutation) => {
       if (observers.gettenSchedule) return;
       if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
@@ -123,6 +125,8 @@ const getTomorrowDate = () => {
 };
 
 const apiGetInfo = async (user: any) => {
+  console.log("apiGetInfo", user);
+
   const truckSearchParams = new URLSearchParams({
     finalDestination: "95",
     finalDestinationTime: getTomorrowDate(),
@@ -163,43 +167,225 @@ const apiGetInfo = async (user: any) => {
     (driver.nameAr as string).trim().startsWith(user.name.trim())
   );
 
-  const entryElement = document.getElementById("entry");
+  const pledgeCheck = document.querySelector(".pledge-check input");
+  if (!pledgeCheck) return;
+  // @ts-expect-error fff
+  pledgeCheck.checked = true;
+  pledgeCheck.dispatchEvent(new Event("change"));
+  pledgeCheck.dispatchEvent(new Event("click"));
 
-  if (entryElement) {
-    entryElement.setAttribute(
-      "records",
-      JSON.stringify([
-        {
-          truck: {
-            plate_number: findTrucks?.[0].plateNumberAr,
-            plateCountry: findTrucks?.[0].plateCountry,
-            vehicleSequenceNumber: findTrucks?.[0].vehicleSequenceNumber,
-            consignmentNumber: "",
-            truckCategoryGroup: findTrucks?.[0].truckCategoryGroup,
-            categoryGroupCode: findTrucks?.[0].categoryGroupCode,
-            truckColorCode: findTrucks?.[0].truckColorCode,
-            plateType: findTrucks?.[0].plateType,
-            chassisNo: findTrucks?.[0].chassisNo,
-          },
-          driver: {
-            DRIVER_NAME: findDrivers?.[0].nameAr,
-            LICENSE_NUMBER: findDrivers?.[0].licenseNo,
-            residentCountry: findDrivers?.[0].residentCountry,
-          },
-        },
-      ])
-    );
+  createDataTableElementForTruck({
+    truck: findTrucks?.[0],
+    driver: findDrivers?.[0],
+  });
 
-    const pledgeCheck = document.querySelector(".pledge-check input");
-    if (!pledgeCheck) return;
-    // @ts-expect-error fff
-    pledgeCheck.checked = true;
-    pledgeCheck.dispatchEvent(new Event("change"));
-    pledgeCheck.dispatchEvent(new Event("click"));
+  createDataTableElementForDriver({
+    truck: findTrucks?.[0],
+    driver: findDrivers?.[0],
+  });
 
-    const button = document.querySelector(
-      "div.wizard-action-buttons button[data-i18n=submitButtonText]"
-    ) as HTMLButtonElement;
-    button.click();
-  }
+  const buttonElement = document.querySelector("#mutliAdded hr + div button") as HTMLButtonElement;
+
+  console.log("buttonElement", buttonElement);
+
+  if (buttonElement) buttonElement.click();
+
+  // if (entryElement) {
+  //   entryElement.setAttribute(
+  //     "records",
+  //     JSON.stringify([
+  // {
+  //   truck: {
+  //     plate_number: findTrucks?.[0].plateNumberAr,
+  //     plateCountry: findTrucks?.[0].plateCountry,
+  //     vehicleSequenceNumber: findTrucks?.[0].vehicleSequenceNumber,
+  //     consignmentNumber: "",
+  //     truckCategoryGroup: findTrucks?.[0].truckCategoryGroup,
+  //     categoryGroupCode: findTrucks?.[0].categoryGroupCode,
+  //     truckColorCode: findTrucks?.[0].truckColorCode,
+  //     plateType: findTrucks?.[0].plateType,
+  //     chassisNo: findTrucks?.[0].chassisNo,
+  //   },
+  //   driver: {
+  //     DRIVER_NAME: findDrivers?.[0].nameAr,
+  //     LICENSE_NUMBER: findDrivers?.[0].licenseNo,
+  //     residentCountry: findDrivers?.[0].residentCountry,
+  //   },
+  // },
+  //     ])
+  //   );
+
+  //   const pledgeCheck = document.querySelector(".pledge-check input");
+  //   if (!pledgeCheck) return;
+  //   // @ts-expect-error fff
+  //   pledgeCheck.checked = true;
+  //   pledgeCheck.dispatchEvent(new Event("change"));
+  //   pledgeCheck.dispatchEvent(new Event("click"));
+
+  //   // const button = document.querySelector(
+  //   //   "div.wizard-action-buttons button[data-i18n=submitButtonText]"
+  //   // ) as HTMLButtonElement;
+  //   // button.click();
+  // }
 };
+
+function createDataTableElementForTruck(obj: any) {
+  const dataTable = document.createElement("data-table");
+
+  dataTable.id = "list_truck";
+
+  dataTable.setAttribute(
+    "columns",
+    JSON.stringify([
+      {tlabel: "broker:vehicle_sequence_number", value: "vehicleSequenceNumber"},
+      {tlabel: "broker:Plate_Number", value: "plateNumberAr"},
+    ])
+  );
+
+  dataTable.setAttribute("click", "");
+
+  dataTable.setAttribute(
+    "actions",
+    JSON.stringify([
+      {
+        tlabel: "broker:Select",
+        class: "btn-primary col-12",
+        click: "fasah.broker_create_appointment_auto.truckGeneralValidate",
+      },
+    ])
+  );
+
+  dataTable.setAttribute("class", "w-100");
+
+  dataTable.setAttribute("vce-ready", "");
+
+  const dataObj = {
+    plateType: obj.truck.plateType,
+    vehicleSequenceNumber: obj.truck.vehicleSequenceNumber,
+    plateNumberAr: obj.truck.plateNumberAr,
+    plateNumberEn: obj.truck.plateNumberEn,
+    plateCountry: obj.truck.plateCountry,
+    chassisNo: obj.truck.chassisNo,
+    truckCategoryGroup: obj.truck.truckCategoryGroup,
+    categoryGroupCode: obj.truck.categoryGroupCode,
+    truckColor: obj.truck.truckColor,
+    truckColorCode: obj.truck.truckColorCode,
+  };
+  // إضافة الـ innerHTML (المحتوى الداخلي)
+  dataTable.innerHTML = `
+    <div class="data-table-container col-12" data-total-elements="1">
+      <div class="row">
+        <div class="col-md-12 mt-2">
+          <div class="table-responsive">
+            <table class="fgrid table table-striped">
+              <thead>
+                <tr>
+                  <th>رقم تسلسل السيارة</th>
+                  <th>رقم اللوحة</th>
+                  <th><span></span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr data-node="0" data-obj="${JSON.stringify(dataObj)}" class="parent active">
+                  <td>
+                    <div role="group" class="btn-group w-100">
+                      <button type="button" class="btn btn-sm btn-secondary btn-primary col-12">اختيار</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(dataTable);
+
+  console.log("dataTable", dataTable);
+
+  const buttonElement = dataTable.querySelector("button");
+
+  console.log("buttonElement create for truck", buttonElement);
+
+  if (buttonElement) buttonElement.click();
+}
+
+function createDataTableElementForDriver(obj: any) {
+  const dataTable = document.createElement("data-table");
+
+  // تعيين الـ attributes
+  dataTable.id = "list_truck";
+
+  dataTable.setAttribute(
+    "columns",
+    JSON.stringify([
+      {tlabel: "broker:license_number", value: "licenseNo"},
+      {tlabel: "broker:fullName", value: "nameAr"},
+    ])
+  );
+
+  dataTable.setAttribute("click", "");
+
+  dataTable.setAttribute(
+    "actions",
+    JSON.stringify([
+      {
+        tlabel: "broker:Select",
+        class: "btn-primary col-12",
+        click: "fasah.broker_create_appointment_auto.getSelectedDriver",
+      },
+    ])
+  );
+
+  dataTable.setAttribute("class", "w-100");
+
+  dataTable.setAttribute("vce-ready", "");
+
+  // استخراج البيانات من obj
+  const dataObj = {
+    licenseNo: obj.driver.licenseNo,
+    nameAr: obj.driver.nameAr,
+    nameEn: obj.driver.nameEn,
+    residentCountry: obj.driver.residentCountry,
+  };
+
+  dataTable.innerHTML = `
+    <div class="data-table-container col-12" data-total-elements="1">
+      <div class="row">
+        <div class="col-md-12 mt-2">
+          <div class="table-responsive">
+            <table class="fgrid table table-striped">
+              <thead>
+                <tr>
+                  <th>رقم رخصة</th>
+                  <th>الاسم</th>
+                  <th><span></span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr data-node="0" data-obj='${JSON.stringify(dataObj)}' class="parent active">
+                  <td>
+                    <div role="group" class="btn-group w-100">
+                      <button type="button" class="btn btn-sm btn-secondary btn-primary col-12">اختيار</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(dataTable);
+
+  console.log("dataTable", dataTable);
+
+  const buttonElement = dataTable.querySelector("button");
+
+  console.log("buttonElement create for driver", buttonElement);
+
+  if (buttonElement) buttonElement.click();
+}

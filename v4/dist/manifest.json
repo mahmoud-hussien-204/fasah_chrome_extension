@@ -29,14 +29,5 @@
     "https://tms.tabadul.sa/*",
     "https://oga.fasah.sa/*"
   ],
-  "declarative_net_request": {
-    "rule_resources": [
-      {
-        "id": "ruleset_1",
-        "enabled": true,
-        "path": "rules.json"
-      }
-    ]
-  },
   "incognito": "split"
 }
