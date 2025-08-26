@@ -1,1 +1,0 @@
-console.log("Background script loaded");chrome.webRequest.onBeforeRequest.addListener(function(e){console.log("Intercepted request:",e),e.method==="POST"&&e.requestBody&&console.log("Request Body:",e.requestBody)},{urls:["https://tms.tabadul.sa/api/appointment/tas/v2/appointment/transit/create"]},["requestBody"]);

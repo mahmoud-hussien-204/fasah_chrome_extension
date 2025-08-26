@@ -1,23 +1,21 @@
 {
   "manifest_version": 3,
-  "name": "Fasah",
+  "name": "Volt",
   "version": "1.0",
-  "description": "An extension to manage truck data and fill forms on a specific page.",
   "permissions": [
-    "storage",
     "activeTab",
+    "storage",
+    "tabs",
     "scripting"
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_icon": {
-      "128": "icon2_128.png"
-    }
+    "default_title": "Click to open popup"
   },
   "content_scripts": [
     {
       "matches": [
-        "https://oga.fasah.sa/*/broker/2.0/*"
+        "https://oga.fasah.sa/*"
       ],
       "js": [
         "content.js"
