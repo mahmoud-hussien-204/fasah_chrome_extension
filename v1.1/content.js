@@ -101,5 +101,7 @@ async function submit() {
     'form[i18n-title="broker:create_appointment:carrier_and_shipment_information"] button[data-i18n="submitButtonText"]'
   );
   console.log("submitting", submitElement);
-  submitElement.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+  if (submitElement.offsetParent) {
+    submitElement.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+  }
 }
