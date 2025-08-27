@@ -62,7 +62,9 @@ async function getSchedules() {
   }
 }
 
-async function selectRandomRadio(selector = "table input[type='radio']") {
+async function selectRandomRadio(
+  selector = "form[i18n-title='broker:create_appointment:appointment_datails'] table input[type='radio']"
+) {
   await waitForElement(selector);
   const radios = Array.from(document.querySelectorAll(selector));
   if (radios.length === 0) return;
@@ -71,21 +73,33 @@ async function selectRandomRadio(selector = "table input[type='radio']") {
   const randomRadio = radios[randomIndex];
 
   randomRadio.checked = true;
-  randomRadio.dispatchEvent(new Event("change", {bubbles: true}));
+  randomRadio.dispatchEvent(new Event("change"));
 
-  goToNext();
+  console.log("selected radio", randomRadio);
 
-  await submit();
+  const isValid = goToNext();
+
+  if (isValid) {
+    await submit();
+  }
 }
 
 function goToNext() {
   const {element: nextButton, exists} = checkElement('button[data-i18n="nextButtonText"]');
+  console.log({exists, nextButton});
+
   if (exists) {
     nextButton.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+    return true;
   }
+  return false;
 }
 
 async function submit() {
-  const submitElement = await waitForElement('button[data-i18n="submitButtonText"]');
+  console.log("submitting");
+  const submitElement = await waitForElement(
+    'form[i18n-title="broker:create_appointment:carrier_and_shipment_information"] button[data-i18n="submitButtonText"]'
+  );
+  console.log("submitting", submitElement);
   submitElement.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 }
