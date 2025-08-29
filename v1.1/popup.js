@@ -20,7 +20,7 @@ function isChromeBrowser() {
 
 function countTabsWithExtension() {
   return new Promise((resolve) => {
-    chrome.tabs.query({url: "https://oga.fasah.sa/*"}, (tabs) => {
+    chrome.tabs.query({url: ["https://oga.fasah.sa/*", "https://fasah.zatca.gov.sa/*"]}, (tabs) => {
       resolve(tabs.length);
     });
   });
@@ -33,7 +33,12 @@ function executeContentScriptOnCurrentTab() {
 
     const tab = tabs[0];
 
-    if (!tab.url || !tab.url.includes("https://oga.fasah.sa/")) return;
+    const allowedUrls = ["https://oga.fasah.sa/*", "https://fasah.zatca.gov.sa/*"];
+
+    // تحقق إن التاب الحالي ضمن الـ URLs المسموح بيها
+    if (!allowedUrls.some((url) => tab.url.startsWith(url))) return;
+
+    // if (!tab.url || !tab.url.includes("https://oga.fasah.sa/")) return;
 
     chrome.scripting.executeScript(
       {

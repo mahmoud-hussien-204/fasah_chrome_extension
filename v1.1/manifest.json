@@ -15,7 +15,8 @@
   "content_scripts": [
     {
       "matches": [
-        "https://oga.fasah.sa/*"
+        "https://oga.fasah.sa/*",
+        "https://fasah.zatca.gov.sa/*"
       ],
       "js": [
         "content.js"
