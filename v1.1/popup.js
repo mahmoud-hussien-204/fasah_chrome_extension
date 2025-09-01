@@ -2,8 +2,13 @@ document.addEventListener("DOMContentLoaded", function () {
   const startBtn = document.getElementById("start-btn");
 
   startBtn.addEventListener("click", () => {
+    console.log("clicked start");
+
     if (isChromeBrowser()) {
+      console.log("is chrome");
       countTabsWithExtension().then((response) => {
+        console.log("countTabsWithExtension", response);
+
         if (response < 4) {
           // ok you are authorized -> run the content.js
           executeContentScriptOnCurrentTab();
