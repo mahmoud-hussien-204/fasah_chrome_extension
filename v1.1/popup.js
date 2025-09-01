@@ -38,7 +38,7 @@ function executeContentScriptOnCurrentTab() {
 
     const tab = tabs[0];
 
-    const allowedUrls = ["https://fasah.zatca.gov.sa/*"];
+    const allowedUrls = ["https://fasah.zatca.gov.sa"];
 
     // تحقق إن التاب الحالي ضمن الـ URLs المسموح بيها
     if (!allowedUrls.some((url) => tab.url.startsWith(url))) return;
