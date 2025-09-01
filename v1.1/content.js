@@ -39,7 +39,11 @@ async function waitForLoadingFinish() {
 }
 
 async function openSchedule() {
+  console.log("opening schedule");
+
   const button = await waitForElement("button[data-i18n='tms:getSchedules']");
+  console.log(button);
+
   button.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 }
 
