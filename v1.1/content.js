@@ -1,6 +1,4 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log("request", request);
-
   if (request.action === "start") {
     getSchedules();
   }
@@ -41,11 +39,7 @@ async function waitForLoadingFinish() {
 }
 
 async function openSchedule() {
-  console.log("opening schedule");
-
   const button = await waitForElement("button[data-i18n='tms:getSchedules']");
-  console.log(button);
-
   button.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 }
 
@@ -64,6 +58,7 @@ async function selectSchedule() {
   const {element: scheduleElement, exists: scheduleExists} = checkElement(
     "#finalSchedule td.day:not(.disabled)[data-action='selectDay']"
   );
+
   if (scheduleExists) {
     scheduleElement.dispatchEvent(new MouseEvent("click", {bubbles: true}));
     await selectRandomRadio();
@@ -73,8 +68,6 @@ async function selectSchedule() {
 }
 
 async function getSchedules() {
-  console.log("getting schedules");
-
   try {
     await openSchedule();
     while (true) {
@@ -91,51 +84,12 @@ async function getSchedules() {
   }
 }
 
-// async function getSchedules() {
-//   const button = await waitForElement("button[data-i18n='tms:getSchedules']");
-
-//   button.dispatchEvent(new MouseEvent("click", {bubbles: true}));
-
-//   let retries = true;
-//   while (retries) {
-//     await waitForLoadingFinish();
-//     const {element: finalScheduleElement, exists: finalScheduleExists} = checkElement(
-//       "#finalSchedule td.day:not(.disabled)[data-action='selectDay']"
-//     );
-
-//     const {element: modalElement, exists: modalExists} = checkElement(".modal-content");
-
-//     console.log(
-//       "finalScheduleExists",
-//       finalScheduleExists,
-//       finalScheduleElement,
-//       modalElement,
-//       modalExists
-//     );
-
-//     if (finalScheduleExists) {
-//       retries = false;
-//       finalScheduleElement.dispatchEvent(new MouseEvent("click", {bubbles: true}));
-//       await selectRandomRadio();
-//     } else if (modalExists) {
-//       const closeModalButton = await waitForElement("#modelcloseicon");
-//       closeModalButton.dispatchEvent(new MouseEvent("click", {bubbles: true}));
-//       await new Promise((resolve) => setTimeout(resolve, 500));
-//       button.dispatchEvent(new MouseEvent("click", {bubbles: true}));
-//     } else {
-//       await new Promise((resolve) => setTimeout(resolve, 100));
-//     }
-//   }
-// }
-
 async function selectRandomRadio(
   selector = "form[i18n-title='broker:create_appointment:appointment_datails'] .fd-datepicker input[type='radio']"
 ) {
-  console.log("radios selector");
+  // console.log("radios selector");
 
-  const element = await waitForElement(selector);
-
-  console.log("radios aferr", element);
+  await waitForElement(selector);
 
   const radios = Array.from(document.querySelectorAll(selector));
   if (radios.length === 0) return;
@@ -146,7 +100,7 @@ async function selectRandomRadio(
   randomRadio.checked = true;
   randomRadio.dispatchEvent(new Event("change"));
 
-  console.log("selected radio", randomRadio);
+  // console.log("selected radio", randomRadio);
 
   const isValid = goToNext();
 
@@ -156,11 +110,7 @@ async function selectRandomRadio(
 }
 
 function goToNext() {
-  console.log("click next....");
-
   const {element: nextButton, exists} = checkElement('button[data-i18n="nextButtonText"]');
-
-  console.log("nextButton", nextButton, exists);
 
   if (exists) {
     nextButton.dispatchEvent(new MouseEvent("click", {bubbles: true}));
@@ -170,17 +120,25 @@ function goToNext() {
 }
 
 async function submit() {
-  console.log("submitting...");
+  // console.log("submitting...");
 
-  const formElementWizard = await waitForElement(".tab-pane.wizard-step.active #mutliAdded");
+  await waitForElement(".tab-pane.wizard-step.active #mutliAdded");
 
-  console.log("formElementWizard", formElementWizard);
+  // console.log("formElementWizard", formElementWizard);
 
   const submitElement = await waitForElement("#broker button[data-i18n='submitButtonText']");
 
-  console.log("submitted", submitElement);
+  // console.log("submitted", submitElement);
 
   if (submitElement) {
     submitElement.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+
+    await waitForLoadingFinish();
+
+    // console.log("loading finished....");
+
+    if (await handleModal()) {
+      await submit();
+    }
   }
 }
