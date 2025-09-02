@@ -33,7 +33,7 @@ function countTabsWithExtension() {
 
 function executeContentScriptOnCurrentTab() {
   // Get the current active tab where the popup was opened
-  chrome.tabs.query({active: true, currentWindow: true}, (tabs, ...rr) => {
+  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
     if (tabs.length === 0) return;
 
     const tab = tabs[0];
@@ -41,9 +41,12 @@ function executeContentScriptOnCurrentTab() {
     const allowedUrls = ["https://fasah.zatca.gov.sa"];
 
     // تحقق إن التاب الحالي ضمن الـ URLs المسموح بيها
-    if (!allowedUrls.some((url) => tab.url.startsWith(url))) return;
+    // if (!allowedUrls.some((url) => tab.url.startsWith(url))) return;
+    console.log("tab.url", tab.url);
 
-    // if (!tab.url || !tab.url.includes("https://oga.fasah.sa/")) return;
+    if (!tab.url || !tab.url.includes("https://fasah")) return;
+
+    console.log("done");
 
     chrome.scripting.executeScript(
       {

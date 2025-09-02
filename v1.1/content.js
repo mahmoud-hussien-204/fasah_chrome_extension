@@ -1,4 +1,6 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log("request", request);
+
   if (request.action === "start") {
     getSchedules();
   }
@@ -71,6 +73,8 @@ async function selectSchedule() {
 }
 
 async function getSchedules() {
+  console.log("getting schedules");
+
   try {
     await openSchedule();
     while (true) {
@@ -127,10 +131,11 @@ async function getSchedules() {
 async function selectRandomRadio(
   selector = "form[i18n-title='broker:create_appointment:appointment_datails'] .fd-datepicker input[type='radio']"
 ) {
-  // console.log("radios selector");
+  console.log("radios selector");
 
   const element = await waitForElement(selector);
-  // console.log("radios aferr", element);
+
+  console.log("radios aferr", element);
 
   const radios = Array.from(document.querySelectorAll(selector));
   if (radios.length === 0) return;
@@ -141,7 +146,7 @@ async function selectRandomRadio(
   randomRadio.checked = true;
   randomRadio.dispatchEvent(new Event("change"));
 
-  // console.log("selected radio", randomRadio);
+  console.log("selected radio", randomRadio);
 
   const isValid = goToNext();
 
@@ -151,7 +156,12 @@ async function selectRandomRadio(
 }
 
 function goToNext() {
+  console.log("click next....");
+
   const {element: nextButton, exists} = checkElement('button[data-i18n="nextButtonText"]');
+
+  console.log("nextButton", nextButton, exists);
+
   if (exists) {
     nextButton.dispatchEvent(new MouseEvent("click", {bubbles: true}));
     return true;
@@ -160,17 +170,15 @@ function goToNext() {
 }
 
 async function submit() {
-  // console.log("submitting...");
+  console.log("submitting...");
 
-  const formElementWizard = await waitForElement(".tab-pane.wizard-step:nth-child(2).active");
+  const formElementWizard = await waitForElement(".tab-pane.wizard-step.active #mutliAdded");
 
-  // console.log("formElementWizard", formElementWizard);
+  console.log("formElementWizard", formElementWizard);
 
-  const submitElement = await waitForElement(
-    "#broker > div > div > div.d-flex.wizard-action-buttons > div:nth-child(5) > button"
-  );
+  const submitElement = await waitForElement("#broker button[data-i18n='submitButtonText']");
 
-  // console.log("submitted", submitElement.offsetParent);
+  console.log("submitted", submitElement);
 
   if (submitElement) {
     submitElement.dispatchEvent(new MouseEvent("click", {bubbles: true}));
