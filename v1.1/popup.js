@@ -1,18 +1,26 @@
+const usersData = {
+  // me
+  fb7175ca8fd647e452e1f9a7efbf9959: {
+    count: 4,
+  },
+};
+
 document.addEventListener("DOMContentLoaded", function () {
   const startBtn = document.getElementById("start-btn");
 
   startBtn.addEventListener("click", () => {
-    console.log("clicked start");
-
     if (isChromeBrowser()) {
-      console.log("is chrome");
       countTabsWithExtension().then((response) => {
-        console.log("countTabsWithExtension", response);
-
-        if (response < 4) {
-          // ok you are authorized -> run the content.js
-          executeContentScriptOnCurrentTab();
-        }
+        verifyUser().then((result) => {
+          if (result.isOk && result.visitorId) {
+            const user = usersData[result.visitorId];
+            if (response < user.count) {
+              console.log("verified");
+              // ok you are authorized -> run the content.js
+              executeContentScriptOnCurrentTab();
+            }
+          }
+        });
       });
     }
   });
@@ -38,15 +46,7 @@ function executeContentScriptOnCurrentTab() {
 
     const tab = tabs[0];
 
-    const allowedUrls = ["https://fasah.zatca.gov.sa"];
-
-    // تحقق إن التاب الحالي ضمن الـ URLs المسموح بيها
-    // if (!allowedUrls.some((url) => tab.url.startsWith(url))) return;
-    console.log("tab.url", tab.url);
-
     if (!tab.url || !tab.url.includes("https://fasah")) return;
-
-    console.log("done");
 
     chrome.scripting.executeScript(
       {
@@ -58,4 +58,24 @@ function executeContentScriptOnCurrentTab() {
       }
     );
   });
+}
+
+async function verifyUser() {
+  const fp = await FingerprintJS.load();
+  const fpResult = await fp.get();
+  const visitorId = fpResult.visitorId;
+
+  console.log("visitorId", visitorId);
+
+  if (visitorId in usersData) {
+    return {
+      isOk: true,
+      visitorId,
+    };
+  }
+
+  return {
+    isOk: false,
+    visitorId: null,
+  };
 }
