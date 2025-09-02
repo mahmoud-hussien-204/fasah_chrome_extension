@@ -48,6 +48,8 @@ async function handleModal() {
   if (modalExists) {
     const closeModalButton = await waitForElement("#modelcloseicon");
     closeModalButton.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+    // for confirmation
+    closeModalButton.click();
     await new Promise((resolve) => setTimeout(resolve, 500));
     return true;
   }
