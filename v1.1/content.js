@@ -87,7 +87,7 @@ async function getSchedules() {
 }
 
 async function selectRandomRadio(
-  selector = "form[i18n-title='broker:create_appointment:appointment_datails'] .fd-datepicker input[type='radio']"
+  selector = "form[i18n-title='broker:create_appointment:appointment_datails'] input[type='radio']"
 ) {
   // console.log("radios selector");
 
