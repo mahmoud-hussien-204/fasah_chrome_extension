@@ -58,8 +58,10 @@ async function handleModal() {
 
 async function selectSchedule() {
   const {element: scheduleElement, exists: scheduleExists} = checkElement(
-    "#finalSchedule td.day:not(.disabled)[data-action='selectDay']"
+    ".tab-pane.active td.day:not(.disabled)[data-action='selectDay']"
   );
+
+  console.log("scheduleElement", scheduleElement);
 
   if (scheduleExists) {
     scheduleElement.dispatchEvent(new MouseEvent("click", {bubbles: true}));
@@ -89,7 +91,7 @@ async function getSchedules() {
 async function selectRandomRadio(
   selector = "form[i18n-title='broker:create_appointment:appointment_datails'] input[type='radio']"
 ) {
-  // console.log("radios selector");
+  console.log("radios selector", selector);
 
   await waitForElement(selector);
 
@@ -102,6 +104,8 @@ async function selectRandomRadio(
   randomRadio.checked = true;
   randomRadio.dispatchEvent(new Event("change"));
 
+  console.log("all radios", {radios, randomRadio, randomIndex});
+
   // console.log("selected radio", randomRadio);
 
   const isValid = goToNext();
@@ -113,6 +117,7 @@ async function selectRandomRadio(
 
 function goToNext() {
   const {element: nextButton, exists} = checkElement('button[data-i18n="nextButtonText"]');
+  console.log("nextButton", nextButton, exists);
 
   if (exists) {
     nextButton.dispatchEvent(new MouseEvent("click", {bubbles: true}));
