@@ -1,7 +1,6 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "start") {
-    // getSchedules();
-    submit();
+    getSchedules();
   }
 });
 
