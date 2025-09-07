@@ -56,7 +56,7 @@ async function handleModal(wait = false) {
 
   if (wait) {
     const modalElement = await waitForElement(".modal-content");
-    if (modalElement.textContent.toLowerCase().includes("تم إرسال طلبات المواعيد التالية بنجاح")) {
+    if (modalElement.textContent.includes("تم إرسال طلبات المواعيد التالية بنجاح")) {
       return false;
     } else {
       return await closeModal();
