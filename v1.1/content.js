@@ -1,6 +1,7 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "start") {
-    getSchedules();
+    // getSchedules();
+    submit();
   }
 });
 
@@ -43,9 +44,8 @@ async function openSchedule() {
   button.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 }
 
-async function handleModal() {
-  const {exists: modalExists} = checkElement(".modal-content");
-  if (modalExists) {
+async function handleModal(wait = false) {
+  async function closeModal() {
     const closeModalButton = await waitForElement("#modelcloseicon");
     closeModalButton.dispatchEvent(new MouseEvent("click", {bubbles: true}));
     // for confirmation
@@ -53,7 +53,17 @@ async function handleModal() {
     await new Promise((resolve) => setTimeout(resolve, 500));
     return true;
   }
-  return false;
+
+  if (wait) {
+    await waitForElement(".modal-content");
+    return await closeModal();
+  } else {
+    const {exists: modalExists} = checkElement(".modal-content");
+    if (modalExists) {
+      return await closeModal();
+    }
+    return false;
+  }
 }
 
 async function selectSchedule() {
@@ -142,9 +152,15 @@ async function submit() {
 
     await waitForLoadingFinish();
 
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
     // console.log("loading finished....");
 
-    if (await handleModal()) {
+    const isModal = await handleModal(true);
+
+    console.log("isModal", isModal);
+
+    if (isModal) {
       await submit();
     }
   }

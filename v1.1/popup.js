@@ -7,6 +7,9 @@ const usersData = {
   "7f90ea3d45b3416b485b87017f1fa202": {
     count: 4,
   },
+  "66fa70b333e0009ba67c7539bd4cc806": {
+    count: 4,
+  },
 };
 
 document.addEventListener("DOMContentLoaded", function () {
