@@ -55,8 +55,12 @@ async function handleModal(wait = false) {
   }
 
   if (wait) {
-    await waitForElement(".modal-content");
-    return await closeModal();
+    const modalElement = await waitForElement(".modal-content");
+    if (modalElement.textContent.toLowerCase().includes("تم إرسال طلبات المواعيد التالية بنجاح")) {
+      return false;
+    } else {
+      return await closeModal();
+    }
   } else {
     const {exists: modalExists} = checkElement(".modal-content");
     if (modalExists) {
@@ -151,10 +155,6 @@ async function submit() {
     submitElement.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 
     await waitForLoadingFinish();
-
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // console.log("loading finished....");
 
     const isModal = await handleModal(true);
 
