@@ -1,8 +1,37 @@
+let isRunning = false;
+
+let usedRadioIndices = [];
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "start") {
+    isRunning = true;
     getSchedules();
+  } else if (request.action === "stop") {
+    isRunning = false;
   }
 });
+
+async function getSchedules() {
+  try {
+    await openSchedule();
+    while (isRunning) {
+      await waitForLoadingFinish();
+      if (!isRunning) break;
+      if (await selectSchedule()) break;
+      if (!isRunning) break;
+      if (await handleModal()) {
+        await openSchedule();
+      } else {
+        await new Promise((resolve) => {
+          if (!isRunning) resolve();
+          else setTimeout(resolve, 100);
+        });
+      }
+    }
+  } catch (error) {
+    console.warn("Error in getSchedules:", error);
+  }
+}
 
 function checkElement(selector) {
   const el = document.querySelector(selector);
@@ -15,8 +44,12 @@ function checkElement(selector) {
 }
 
 async function waitForElement(selector, interval = 250) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const timer = setInterval(() => {
+      if (!isRunning) {
+        clearInterval(timer);
+        reject("Operation cancelled");
+      }
       const {element, exists} = checkElement(selector);
       if (exists && element) {
         clearInterval(timer);
@@ -55,8 +88,11 @@ async function handleModal(wait = false) {
 
   if (wait) {
     const modalElement = await waitForElement(".modal-content");
-    if (modalElement.textContent.includes("تم إرسال طلبات المواعيد التالية بنجاح")) {
+    const modalText = modalElement.textContent;
+    if (modalText.includes("تم إرسال طلبات المواعيد التالية بنجاح")) {
       return false;
+    } else if (modalText.includes("لقد نفذت المواعيد")) {
+      return "no_appointments"; // New case: no appointments available
     } else {
       return await closeModal();
     }
@@ -74,8 +110,6 @@ async function selectSchedule() {
     ".tab-pane.active td.day:not(.disabled)[data-action='selectDay']"
   );
 
-  console.log("scheduleElement", scheduleElement);
-
   if (scheduleExists) {
     scheduleElement.dispatchEvent(new MouseEvent("click", {bubbles: true}));
     await selectRandomRadio();
@@ -84,53 +118,44 @@ async function selectSchedule() {
   return false;
 }
 
-async function getSchedules() {
-  try {
-    await openSchedule();
-    while (true) {
-      await waitForLoadingFinish();
-      if (await selectSchedule()) break;
-      if (await handleModal()) {
-        await openSchedule();
-      } else {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      }
-    }
-  } catch (error) {
-    console.error("Error in getSchedules:", error);
-  }
-}
-
 async function selectRandomRadio(
   selector = "form[i18n-title='broker:create_appointment:appointment_datails'] input[type='radio']"
 ) {
-  console.log("radios selector", selector);
-
   await waitForElement(selector);
 
   const radios = Array.from(document.querySelectorAll(selector));
   if (radios.length === 0) return;
 
-  const randomIndex = Math.floor(Math.random() * radios.length);
+  // Filter out used indices
+  const availableIndices = radios
+    .map((_, index) => index)
+    .filter((index) => !usedRadioIndices.includes(index));
+
+  console.log("availableIndices", availableIndices);
+
+  if (availableIndices.length === 0) {
+    alert("كل المواعيد تم استخدامها");
+    return false;
+  }
+
+  const randomIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+  usedRadioIndices.push(randomIndex); // Track selected index
   const randomRadio = radios[randomIndex];
 
   randomRadio.checked = true;
   randomRadio.dispatchEvent(new Event("change"));
-
-  console.log("all radios", {radios, randomRadio, randomIndex});
-
-  // console.log("selected radio", randomRadio);
 
   const isValid = goToNext();
 
   if (isValid) {
     await submit();
   }
+
+  return true;
 }
 
 function goToNext() {
   const {element: nextButton, exists} = checkElement('button[data-i18n="nextButtonText"]');
-  console.log("nextButton", nextButton, exists);
 
   if (exists) {
     nextButton.dispatchEvent(new MouseEvent("click", {bubbles: true}));
@@ -139,16 +164,21 @@ function goToNext() {
   return false;
 }
 
-async function submit() {
-  // console.log("submitting...");
+function goToBack() {
+  const {element: backButton, exists} = checkElement('button[data-i18n="previous"]');
+  console.log("backButton", backButton);
 
+  if (exists) {
+    backButton.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+    return true;
+  }
+  return false;
+}
+
+async function submit() {
   await waitForElement(".tab-pane.wizard-step.active #mutliAdded");
 
-  // console.log("formElementWizard", formElementWizard);
-
   const submitElement = await waitForElement("#broker button[data-i18n='submitButtonText']");
-
-  // console.log("submitted", submitElement);
 
   if (submitElement) {
     submitElement.dispatchEvent(new MouseEvent("click", {bubbles: true}));
@@ -156,10 +186,12 @@ async function submit() {
     await waitForLoadingFinish();
 
     const isModal = await handleModal(true);
-
-    console.log("isModal", isModal);
-
-    if (isModal) {
+    if (isModal === "no_appointments") {
+      const isValid = goToBack();
+      if (isValid) {
+        await selectRandomRadio();
+      }
+    } else if (isModal === true) {
       await submit();
     }
   }

@@ -1,39 +1,82 @@
-const usersData = {
-  // me
-  fb7175ca8fd647e452e1f9a7efbf9959: {
-    count: 4,
-  },
-  // khaled
-  "7f90ea3d45b3416b485b87017f1fa202": {
-    count: 4,
-  },
-  // khaled
-  "5186cdab666c930dc6c819c8d18a32d7": {
-    count: 4,
-  },
-  "66fa70b333e0009ba67c7539bd4cc806": {
-    count: 4,
-  },
-};
+let userToken = localStorage.getItem("token");
+
+let userData = JSON.parse(localStorage.getItem("userData"));
 
 document.addEventListener("DOMContentLoaded", function () {
+  const loginBtn = document.getElementById("login-btn");
+
   const startBtn = document.getElementById("start-btn");
+
+  const stopBtn = document.getElementById("stop-btn");
+
+  const loading = document.getElementById("loading");
+
+  const actionsElement = document.getElementById("actions");
+
+  const loginFormElement = document.getElementById("login-form");
+
+  const alertElement = document.getElementById("alert");
+
+  function showActionsElement() {
+    loginFormElement.classList.add("hidden");
+    actionsElement.classList.remove("hidden");
+  }
+
+  function showLoginElement() {
+    loginFormElement.classList.remove("hidden");
+    actionsElement.classList.add("hidden");
+  }
+
+  // ********** login handler
+  if (userToken) {
+    showActionsElement();
+  } else {
+    showLoginElement();
+  }
+
+  loginBtn.addEventListener("click", handleLogin);
+
+  function handleLogin() {
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+    if (username && password) {
+      alertElement.textContent = "";
+      loading.classList.remove("hidden");
+      verifyUser(username, password).then((result) => {
+        if (result.isOk) {
+          userData = result;
+          localStorage.setItem("token", "generated");
+          localStorage.setItem("userData", JSON.stringify(result));
+          showActionsElement();
+        } else {
+          alertElement.textContent = "بيانات الدخول غير صحيحة";
+        }
+        loading.classList.add("hidden");
+      });
+    }
+  }
+  // ****** end login handler
 
   startBtn.addEventListener("click", () => {
     if (isChromeBrowser()) {
       countTabsWithExtension().then((response) => {
-        verifyUser().then((result) => {
-          if (result.isOk && result.visitorId) {
-            const user = usersData[result.visitorId];
-            if (response < user.count) {
-              console.log("verified");
-              // ok you are authorized -> run the content.js
-              executeContentScriptOnCurrentTab();
-            }
-          }
-        });
+        if (userData && userData.isOk && userData.active && response < userData.count) {
+          console.log("verified");
+          // ok you are authorized -> run the content.js
+          startBtn.classList.add("hidden");
+          stopBtn.classList.remove("hidden");
+          executeContentScriptOnCurrentTab();
+        }
       });
     }
+  });
+
+  stopBtn.addEventListener("click", () => {
+    stopBtn.classList.add("hidden");
+    startBtn.classList.remove("hidden");
+    validateTab((tab) => {
+      chrome.tabs.sendMessage(tab.id, {action: "stop"});
+    });
   });
 });
 
@@ -45,12 +88,14 @@ function isChromeBrowser() {
 function countTabsWithExtension() {
   return new Promise((resolve) => {
     chrome.tabs.query({url: "https://fasah.zatca.gov.sa/*"}, (tabs) => {
+      console.log("tabs", tabs);
+
       resolve(tabs.length);
     });
   });
 }
 
-function executeContentScriptOnCurrentTab() {
+function validateTab(callback) {
   // Get the current active tab where the popup was opened
   chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
     if (tabs.length === 0) return;
@@ -59,34 +104,34 @@ function executeContentScriptOnCurrentTab() {
 
     if (!tab.url || !tab.url.includes("https://fasah")) return;
 
-    chrome.scripting.executeScript(
-      {
-        target: {tabId: tab.id},
-        files: ["content.js"],
-      },
-      () => {
-        chrome.tabs.sendMessage(tab.id, {action: "start"});
-      }
-    );
+    callback(tab);
   });
 }
 
-async function verifyUser() {
-  const fp = await FingerprintJS.load();
-  const fpResult = await fp.get();
-  const visitorId = fpResult.visitorId;
+function executeContentScriptOnCurrentTab() {
+  validateTab((tab) => {
+    chrome.tabs.sendMessage(tab.id, {action: "start"});
+  });
+}
 
-  console.log("visitorId", visitorId);
+async function verifyUser(userName, password) {
+  const baseURL =
+    "https://raw.githubusercontent.com/mahmoud-hussien-204/fasah_users/refs/heads/main/users.json";
 
-  if (visitorId in usersData) {
+  const response = await fetch(baseURL);
+
+  const data = await response.json();
+
+  const userData = data.users[userName];
+
+  if (userData && userData.password === password) {
     return {
       isOk: true,
-      visitorId,
+      ...userData,
     };
   }
 
   return {
     isOk: false,
-    visitorId: null,
   };
 }
