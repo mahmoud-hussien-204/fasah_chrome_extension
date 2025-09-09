@@ -89,6 +89,7 @@ async function handleModal(wait = false) {
   if (wait) {
     const modalElement = await waitForElement(".modal-content");
     const modalText = modalElement.textContent;
+    console.log("modalText", modalText);
     if (modalText.includes("تم إرسال طلبات المواعيد التالية بنجاح")) {
       return false;
     } else if (modalText.includes("لقد نفذت المواعيد")) {
@@ -166,7 +167,7 @@ function goToNext() {
 
 function goToBack() {
   const {element: backButton, exists} = checkElement('button[data-i18n="previous"]');
-  console.log("backButton", backButton);
+  console.log("backButton", {backButton, exists});
 
   if (exists) {
     backButton.dispatchEvent(new MouseEvent("click", {bubbles: true}));
