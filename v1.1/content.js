@@ -180,7 +180,7 @@ function goToNext() {
 function goToBack() {
   console.log("backButton");
   const {element: backButton, exists} = checkElement('button[data-i18n="previous"]');
-  console.log("is backButton", backButton);
+  console.log("backButton", {backButton, exists});
 
   if (exists) {
     backButton.dispatchEvent(new MouseEvent("click", {bubbles: true}));
