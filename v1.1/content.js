@@ -2,12 +2,42 @@ let isRunning = false;
 
 let usedRadioIndices = [];
 
+// Polite mode constants and state
+const MIN_IDLE_MS = 300;
+const MAX_IDLE_MS = 5000;
+const BACKOFF_FACTOR = 1.6;
+const JITTER_RATIO = 0.2; // ±20%
+const SUBMIT_MAX_RETRIES = 3;
+const SUBMIT_COOLDOWN_BASE_MS = 800;
+
+let idleDelayMs = MIN_IDLE_MS;
+
+function resetPoliteState() {
+  idleDelayMs = MIN_IDLE_MS;
+}
+
+function withJitter(ms) {
+  const delta = ms * JITTER_RATIO;
+  const min = Math.max(0, ms - delta);
+  const max = ms + delta;
+  return Math.floor(min + Math.random() * (max - min));
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "start") {
+    if (isRunning) return; // prevent overlapping loops
     isRunning = true;
+    usedRadioIndices = [];
+    resetPoliteState();
     getSchedules();
   } else if (request.action === "stop") {
     isRunning = false;
+    usedRadioIndices = [];
+    resetPoliteState();
   } else if (request.action === "status") {
     sendResponse({isRunning});
   }
@@ -19,15 +49,17 @@ async function getSchedules() {
     while (isRunning) {
       await waitForLoadingFinish();
       if (!isRunning) break;
-      if (await selectSchedule()) break;
+      if (await selectSchedule()) {
+        resetPoliteState();
+        break;
+      }
       if (!isRunning) break;
       if (await handleModal()) {
         await openSchedule();
+        idleDelayMs = Math.min(Math.floor(idleDelayMs * BACKOFF_FACTOR), MAX_IDLE_MS);
       } else {
-        await new Promise((resolve) => {
-          if (!isRunning) resolve();
-          else setTimeout(resolve, 100);
-        });
+        await sleep(withJitter(idleDelayMs));
+        idleDelayMs = Math.min(Math.floor(idleDelayMs * BACKOFF_FACTOR), MAX_IDLE_MS);
       }
     }
   } catch (error) {
@@ -194,21 +226,36 @@ async function submit() {
 
   const submitElement = await waitForElement("#broker button[data-i18n='submitButtonText']");
 
-  if (submitElement) {
+  if (!submitElement) return;
+
+  let attempt = 0;
+  while (isRunning && attempt < SUBMIT_MAX_RETRIES) {
     submitElement.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 
     await waitForLoadingFinish();
 
-    const isModal = await handleModal(true);
-    if (isModal === "no_appointments") {
+    const modalResult = await handleModal(true);
+    if (modalResult === "no_appointments") {
       const isValid = goToBack();
       console.log("go to back and select random radio", isValid);
-
       if (isValid) {
         await selectRandomRadio();
       }
-    } else if (isModal === true) {
-      await submit();
+      return; // stop retrying this submit path
+    }
+
+    if (modalResult === false) {
+      // Success modal path handled: nothing to retry
+      return;
+    }
+
+    attempt++;
+    if (attempt < SUBMIT_MAX_RETRIES) {
+      const cooldown = Math.min(
+        MAX_IDLE_MS,
+        Math.floor(SUBMIT_COOLDOWN_BASE_MS * Math.pow(BACKOFF_FACTOR, attempt - 1))
+      );
+      await sleep(withJitter(cooldown));
     }
   }
 }
