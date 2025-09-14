@@ -24,7 +24,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
   validateTab((tab) => {
     chrome.tabs.sendMessage(tab.id, {action: "status"}, (response) => {
-      console.log("status response", response);
+      if (response.isRunning) {
+        startBtn.classList.add("hidden");
+        stopBtn.classList.remove("hidden");
+      } else {
+        startBtn.classList.remove("hidden");
+        stopBtn.classList.add("hidden");
+      }
     });
   });
 
@@ -42,7 +48,6 @@ document.addEventListener("DOMContentLoaded", function () {
   if (userToken) {
     verifyUser(userData.name, userData.password).then((result) => {
       if (result.isOk) {
-        console.log("verified********");
         updateUserData(result);
         showActionsElement();
       }
@@ -78,7 +83,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (isChromeBrowser()) {
       countTabsWithExtension().then((response) => {
         if (userData && userData.isOk && userData.active && response < userData.count) {
-          console.log("verified");
           // ok you are authorized -> run the content.js
           startBtn.classList.add("hidden");
           stopBtn.classList.remove("hidden");
@@ -102,14 +106,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
 function isChromeBrowser() {
   const userAgent = navigator.userAgent;
-  return userAgent.includes("Chrome");
+  return userAgent.includes("Chrome") || userAgent.includes("Edg");
 }
 
 function countTabsWithExtension() {
   return new Promise((resolve) => {
     chrome.tabs.query({url: "https://fasah.zatca.gov.sa/*"}, (tabs) => {
-      console.log("tabs", tabs);
-
       resolve(tabs.length);
     });
   });

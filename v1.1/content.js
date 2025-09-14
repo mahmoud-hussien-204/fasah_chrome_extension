@@ -91,8 +91,6 @@ async function handleModal(wait = false, timeout = 500) {
   if (wait) {
     const modalElement = await waitForElement(".modal-content");
     const modalText = modalElement.textContent;
-    console.log("handle modal", modalText);
-
     if (modalText.includes("تم إرسال طلبات المواعيد التالية بنجاح")) {
       return false;
     } else if (modalText.includes("لقد نفذت المواعيد")) {
@@ -111,13 +109,9 @@ async function handleModal(wait = false, timeout = 500) {
 }
 
 async function selectSchedule() {
-  console.log("day element");
-
   const {element: scheduleElement, exists: scheduleExists} = checkElement(
     ".tab-pane.active td.day:not(.disabled)[data-action='selectDay']"
   );
-
-  console.log("is day element", scheduleElement, scheduleExists);
 
   if (scheduleExists) {
     scheduleElement.dispatchEvent(new MouseEvent("click", {bubbles: true}));
@@ -130,8 +124,6 @@ async function selectSchedule() {
 async function selectRandomRadio(
   selector = "form[i18n-title='broker:create_appointment:appointment_datails'] input[type='radio']"
 ) {
-  console.log("selectRandomRadio", selector);
-
   await waitForElement(selector);
 
   const radios = Array.from(document.querySelectorAll(selector));
@@ -142,8 +134,6 @@ async function selectRandomRadio(
     .map((_, index) => index)
     .filter((index) => !usedRadioIndices.includes(index));
 
-  console.log("availableIndices", {availableIndices, usedRadioIndices});
-
   if (availableIndices.length === 0) {
     alert("كل المواعيد تم استخدامها");
     return false;
@@ -152,8 +142,6 @@ async function selectRandomRadio(
   const randomIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
   usedRadioIndices.push(randomIndex); // Track selected index
   const randomRadio = radios[randomIndex];
-
-  console.log("selected random radio", {randomIndex, randomRadio});
 
   randomRadio.checked = true;
   randomRadio.dispatchEvent(new Event("change"));
@@ -178,9 +166,7 @@ function goToNext() {
 }
 
 function goToBack() {
-  console.log("backButton");
   const {element: backButton, exists} = checkElement('button[data-i18n="previous"]');
-  console.log("backButton", {backButton, exists});
 
   if (exists) {
     backButton.dispatchEvent(new MouseEvent("click", {bubbles: true}));
@@ -202,8 +188,6 @@ async function submit() {
     const isModal = await handleModal(true);
     if (isModal === "no_appointments") {
       const isValid = goToBack();
-      console.log("go to back and select random radio", isValid);
-
       if (isValid) {
         await selectRandomRadio();
       }
