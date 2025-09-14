@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   validateTab((tab) => {
     chrome.tabs.sendMessage(tab.id, {action: "status"}, (response) => {
-      if (response.isRunning) {
+      if (response && response?.isRunning) {
         startBtn.classList.add("hidden");
         stopBtn.classList.remove("hidden");
       } else {
