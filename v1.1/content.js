@@ -8,6 +8,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     getSchedules();
   } else if (request.action === "stop") {
     isRunning = false;
+  } else if (request.action === "status") {
+    sendResponse({isRunning});
   }
 });
 
@@ -43,7 +45,7 @@ function checkElement(selector) {
   };
 }
 
-async function waitForElement(selector, interval = 250) {
+async function waitForElement(selector, interval = 100) {
   return new Promise((resolve, reject) => {
     const timer = setInterval(() => {
       if (!isRunning) {
@@ -76,23 +78,23 @@ async function openSchedule() {
   button.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 }
 
-async function handleModal(wait = false) {
+async function handleModal(wait = false, timeout = 500) {
   async function closeModal() {
     const closeModalButton = await waitForElement("#modelcloseicon");
     closeModalButton.dispatchEvent(new MouseEvent("click", {bubbles: true}));
     // for confirmation
     closeModalButton.click();
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 200));
     return true;
   }
 
   if (wait) {
     const modalElement = await waitForElement(".modal-content");
     const modalText = modalElement.textContent;
-    console.log("modalText", modalText);
     if (modalText.includes("تم إرسال طلبات المواعيد التالية بنجاح")) {
       return false;
     } else if (modalText.includes("لقد نفذت المواعيد")) {
+      await closeModal();
       return "no_appointments"; // New case: no appointments available
     } else {
       return await closeModal();
@@ -132,8 +134,6 @@ async function selectRandomRadio(
     .map((_, index) => index)
     .filter((index) => !usedRadioIndices.includes(index));
 
-  console.log("availableIndices", availableIndices);
-
   if (availableIndices.length === 0) {
     alert("كل المواعيد تم استخدامها");
     return false;
@@ -167,7 +167,6 @@ function goToNext() {
 
 function goToBack() {
   const {element: backButton, exists} = checkElement('button[data-i18n="previous"]');
-  console.log("backButton", {backButton, exists});
 
   if (exists) {
     backButton.dispatchEvent(new MouseEvent("click", {bubbles: true}));

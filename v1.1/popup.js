@@ -2,6 +2,11 @@ let userToken = localStorage.getItem("token");
 
 let userData = JSON.parse(localStorage.getItem("userData"));
 
+function updateUserData(data) {
+  userData = data;
+  localStorage.setItem("userData", JSON.stringify(data));
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   const loginBtn = document.getElementById("login-btn");
 
@@ -17,6 +22,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const alertElement = document.getElementById("alert");
 
+  validateTab((tab) => {
+    chrome.tabs.sendMessage(tab.id, {action: "status"}, (response) => {
+      if (response && response?.isRunning) {
+        startBtn.classList.add("hidden");
+        stopBtn.classList.remove("hidden");
+      } else {
+        startBtn.classList.remove("hidden");
+        stopBtn.classList.add("hidden");
+      }
+    });
+  });
+
   function showActionsElement() {
     loginFormElement.classList.add("hidden");
     actionsElement.classList.remove("hidden");
@@ -29,7 +46,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // ********** login handler
   if (userToken) {
-    showActionsElement();
+    verifyUser(userData.name, userData.password).then((result) => {
+      if (result.isOk) {
+        updateUserData(result);
+        showActionsElement();
+      }
+    });
   } else {
     showLoginElement();
   }
@@ -44,9 +66,8 @@ document.addEventListener("DOMContentLoaded", function () {
       loading.classList.remove("hidden");
       verifyUser(username, password).then((result) => {
         if (result.isOk) {
-          userData = result;
+          updateUserData(result);
           localStorage.setItem("token", "generated");
-          localStorage.setItem("userData", JSON.stringify(result));
           showActionsElement();
         } else {
           alertElement.textContent = "بيانات الدخول غير صحيحة";
@@ -57,11 +78,11 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   // ****** end login handler
 
+  // start
   startBtn.addEventListener("click", () => {
     if (isChromeBrowser()) {
       countTabsWithExtension().then((response) => {
         if (userData && userData.isOk && userData.active && response < userData.count) {
-          console.log("verified");
           // ok you are authorized -> run the content.js
           startBtn.classList.add("hidden");
           stopBtn.classList.remove("hidden");
@@ -70,7 +91,9 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     }
   });
+  // ****** end start
 
+  // stop
   stopBtn.addEventListener("click", () => {
     stopBtn.classList.add("hidden");
     startBtn.classList.remove("hidden");
@@ -78,18 +101,17 @@ document.addEventListener("DOMContentLoaded", function () {
       chrome.tabs.sendMessage(tab.id, {action: "stop"});
     });
   });
+  // ****** end stop
 });
 
 function isChromeBrowser() {
   const userAgent = navigator.userAgent;
-  return userAgent.includes("Chrome");
+  return userAgent.includes("Chrome") || userAgent.includes("Edg");
 }
 
 function countTabsWithExtension() {
   return new Promise((resolve) => {
     chrome.tabs.query({url: "https://fasah.zatca.gov.sa/*"}, (tabs) => {
-      console.log("tabs", tabs);
-
       resolve(tabs.length);
     });
   });
