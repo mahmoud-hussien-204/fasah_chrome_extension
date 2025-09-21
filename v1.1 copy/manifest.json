@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Volt",
+  "name": "VoltOld",
   "version": "1.0",
   "permissions": [
     "activeTab",
