@@ -1,15 +1,9 @@
-import { SendIcon } from 'lucide-react';
-
-import { cn } from '../utils/index.utils';
-
-const AppLogo = ({ className }: { className?: string }) => {
+const AppLogo = () => {
   return (
-    <h5
-      className={cn('gap-0.25rem flex items-center text-2xl font-bold tracking-wider', className)}
-    >
-      <SendIcon className='text-primary' />
-      MegaSender
-    </h5>
+    <div className='mb-4 flex items-center gap-2'>
+      <img src='/icon128.png' alt='logo' className='size-8 rounded-full object-cover' />
+      <span className='text-2xl font-semibold'>Volt</span>
+    </div>
   );
 };
 

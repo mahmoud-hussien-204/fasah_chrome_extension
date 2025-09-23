@@ -1,24 +1,15 @@
-import { userDataTokenAtom } from '@/core/store/atoms/user-data.atoms';
+import { useAuth } from '@/App';
 
-import { useAtomValue } from 'jotai';
+import UserData from '../user-data';
 
-import { Navigate, useLocation } from 'react-router';
+import LoginForm from '../login-form';
 
 const AuthGuard = ({ children }: React.PropsWithChildren) => {
-  const location = useLocation();
+  const { isLoggedIn } = useAuth();
 
-  const userToken = useAtomValue(userDataTokenAtom);
+  if (!isLoggedIn) return <LoginForm />;
 
-  const inAuthPage = location.pathname.startsWith(`/auth`);
-
-  // If no token and not on an auth page, redirect to login
-  if (!userToken && !inAuthPage)
-    return <Navigate to='/auth/login' state={{ from: location }} replace />;
-
-  // If authenticated and on an auth page, redirect to base URL
-  if (userToken && inAuthPage) return <Navigate to='/' replace />;
-
-  return children;
+  return <UserData>{children}</UserData>;
 };
 
 export default AuthGuard;

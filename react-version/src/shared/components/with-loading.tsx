@@ -15,7 +15,7 @@ export default WithLoading;
 
 export const Loading = ({ className }: Partial<Pick<IProps, 'className'>>) => {
   return (
-    <div className={cn('flex h-[calc(100svh-250px)] items-center justify-center', className)}>
+    <div className={cn('flex h-[150px] items-center justify-center', className)}>
       <Loader2Icon className='-mt-0.5rem animate-spin' size={28} />
       {/* <div className='animate-bounce'>Loading...</div> */}
     </div>

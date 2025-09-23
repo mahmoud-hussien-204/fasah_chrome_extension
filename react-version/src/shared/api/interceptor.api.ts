@@ -1,8 +1,3 @@
-
-import { notificationUtil } from '../utils/notification.utils';
-
-
-
 interface IInterceptor {
   endpoint: string;
   requestOptions?: RequestInit;
@@ -27,7 +22,7 @@ export async function interceptor<TData>({
 
     // show success toast
     if (requestOptions.method !== 'GET' && showToast && data.message) {
-      notificationUtil.success(data.message);
+      console.info(data.message);
     }
 
     return data;
@@ -39,55 +34,30 @@ export async function interceptor<TData>({
 
     // show error toast
     if (showToast) {
-      notificationUtil.error(apiError.message);
+      console.error(apiError.message);
     }
 
     return Promise.reject(apiError);
   }
 }
 
-function getToken() {
-  let token: string | null | undefined = null;
-
-  return () => {
-    if (!token) {
-      token = store.get(userDataTokenAtom);
-    }
-    return token;
-  };
-}
-
-const token = getToken();
-
-const language = store.get(appConfigLangAtom);
-
 async function interceptRequest(request: RequestInit) {
   const headers = new Headers({
     ...(request.headers || {}),
-    Authorization: `Bearer ${token()}`,
-    'Accept-Language': language,
-    'Content-Language': language,
+    'Accept-Language': 'en',
+    'Content-Language': 'en',
     'Content-Type': 'application/json',
     Accept: 'application/json',
   });
 
-  if (request.body instanceof FormData) {
-    headers.delete('Content-Type');
-    headers.delete('Accept');
-  }
-
   request.headers = headers;
-
   return request;
 }
 
 async function interceptResponse<TData>(response: Response): Promise<IApiResponse<TData>> {
   // if unauthorized remove token and redirect to login page
   if (response.status === 401) {
-    localStorage.removeItem('token');
-    if (!window.location.pathname.startsWith('/auth')) {
-      window.location.pathname = '/auth/login';
-    }
+    localStorage.clear();
   }
 
   const data = await response.json();
@@ -101,8 +71,7 @@ async function interceptResponse<TData>(response: Response): Promise<IApiRespons
 
   return {
     message: data.message,
-    data: data.data?.meta ? data.data?.data : data.data,
-    meta: data.data?.meta,
+    data: data.data,
     statusCode: response.status,
   };
 }
