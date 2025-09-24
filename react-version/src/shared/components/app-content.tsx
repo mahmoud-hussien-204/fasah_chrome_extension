@@ -4,6 +4,8 @@ import { Button } from './ui/button';
 
 import StartApp from './start-app';
 
+import { AppStatusProvider } from '../providers/app-status.provider';
+
 enum UpdateType {
   NEW = 'new',
   OLD = 'old',
@@ -42,7 +44,9 @@ const AppContent = () => {
   return (
     <div>
       {isContentReady ? (
-        <StartApp url={refOfCurrentURL.current} />
+        <AppStatusProvider url={refOfCurrentURL.current}>
+          <StartApp url={refOfCurrentURL.current} />
+        </AppStatusProvider>
       ) : (
         <div className='flex flex-col gap-3'>
           {updates.map((updateItem) => (

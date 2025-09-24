@@ -124,6 +124,8 @@ function validateTab(callback) {
 
     const tab = tabs[0];
 
+    console.log("Current Tab URL:", tabs, tab.url);
+
     if (!tab.url || !tab.url.includes("https://fasah")) return;
 
     callback(tab);

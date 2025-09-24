@@ -22,8 +22,6 @@ const UserData = ({ children }: React.PropsWithChildren) => {
     retry: 0,
   });
 
-  console.log(data, isFetching);
-
   useEffect(() => {
     if (isError) {
       localStorage.clear();
