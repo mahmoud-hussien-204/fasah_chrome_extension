@@ -7,7 +7,7 @@ export function apiGetUserData(userName: string | null) {
 
   if (!isSafe) return Promise.reject();
 
-  return interceptor({
+  return interceptor<IUser>({
     endpoint: `/users/${userName}`,
   });
 }

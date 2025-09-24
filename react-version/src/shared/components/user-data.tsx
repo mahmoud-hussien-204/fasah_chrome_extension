@@ -2,8 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 
 import { apiGetUserData } from '../api/index.api';
 
-import { useAuth } from '@/App';
-
 import { useEffect } from 'react';
 
 import WithLoading from './with-loading';
@@ -11,6 +9,8 @@ import WithLoading from './with-loading';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 import { AlertCircleIcon } from 'lucide-react';
+
+import { useAuth } from '../providers/auth.provider';
 
 const UserData = ({ children }: React.PropsWithChildren) => {
   const { userName } = useAuth();
@@ -38,7 +38,16 @@ const UserData = ({ children }: React.PropsWithChildren) => {
       <AlertDescription>{error.message}</AlertDescription>
     </Alert>
   ) : (
-    <WithLoading isLoading={isFetching}>{children}</WithLoading>
+    <WithLoading isLoading={isFetching}>
+      {data?.data?.isActive ? (
+        children
+      ) : (
+        <Alert variant='destructive'>
+          <AlertCircleIcon />
+          <AlertTitle>حسابك غير مفعل</AlertTitle>
+        </Alert>
+      )}
+    </WithLoading>
   );
 };
 

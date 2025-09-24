@@ -18,7 +18,7 @@ import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 import { AlertCircleIcon } from 'lucide-react';
 
-import { useAuth } from '@/App';
+import { useAuth } from '../providers/auth.provider';
 
 const loginFormSchema = z.object({
   userName: z
