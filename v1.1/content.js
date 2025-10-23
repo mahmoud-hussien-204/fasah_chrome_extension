@@ -26,7 +26,7 @@ async function getSchedules() {
       } else {
         await new Promise((resolve) => {
           if (!isRunning) resolve();
-          else setTimeout(resolve, 100);
+          else setTimeout(resolve, 150);
         });
       }
     }
@@ -69,7 +69,7 @@ async function waitForLoadingFinish() {
         clearInterval(timer);
         resolve();
       }
-    }, 100);
+    }, 120);
   });
 }
 
@@ -78,13 +78,13 @@ async function openSchedule() {
   button.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 }
 
-async function handleModal(wait = false, timeout = 500) {
+async function handleModal(wait = false) {
   async function closeModal() {
     const closeModalButton = await waitForElement("#modelcloseicon");
     closeModalButton.dispatchEvent(new MouseEvent("click", {bubbles: true}));
     // for confirmation
     closeModalButton.click();
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await new Promise((resolve) => setTimeout(resolve, 400));
     return true;
   }
 

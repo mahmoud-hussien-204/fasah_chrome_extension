@@ -24,7 +24,7 @@ async function getSchedules() {
       } else {
         await new Promise((resolve) => {
           if (!isRunning) resolve();
-          else setTimeout(resolve, 100);
+          else setTimeout(resolve, 150);
         });
       }
     }
@@ -67,7 +67,7 @@ async function waitForLoadingFinish() {
         clearInterval(timer);
         resolve();
       }
-    }, 100);
+    }, 120);
   });
 }
 
@@ -89,7 +89,6 @@ async function handleModal(wait = false) {
   if (wait) {
     const modalElement = await waitForElement(".modal-content");
     const modalText = modalElement.textContent;
-    console.log("modalText", modalText);
     if (modalText.includes("تم إرسال طلبات المواعيد التالية بنجاح")) {
       return false;
     } else if (modalText.includes("لقد نفذت المواعيد")) {
@@ -132,8 +131,6 @@ async function selectRandomRadio(
     .map((_, index) => index)
     .filter((index) => !usedRadioIndices.includes(index));
 
-  console.log("availableIndices", availableIndices);
-
   if (availableIndices.length === 0) {
     alert("كل المواعيد تم استخدامها");
     return false;
@@ -167,7 +164,6 @@ function goToNext() {
 
 function goToBack() {
   const {element: backButton, exists} = checkElement('button[data-i18n="previous"]');
-  console.log("backButton", {backButton, exists});
 
   if (exists) {
     backButton.dispatchEvent(new MouseEvent("click", {bubbles: true}));
