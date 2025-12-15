@@ -1,0 +1,14 @@
+body {
+  width: 200px;
+  padding: 10px;
+}
+
+#msg {
+  margin-top: 10px;
+  color: green;
+  font-size: 14px;
+}
+
+.hidden {
+  display: none;
+}

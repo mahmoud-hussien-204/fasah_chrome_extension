@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "CopyToken",
+  "version": "1.1.1",
+  "permissions": [
+    "cookies",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "*://*/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "CopyToken"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://fasah.zatca.gov.sa/*",
+        "https://oga.fasah.sa/*"
+      ],
+      "js": [
+        "content.js"
+      ]
+    }
+  ],
+  "icons": {
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}
