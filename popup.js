@@ -11,7 +11,7 @@ btn.addEventListener("click", async () => {
 
   const { hostname ,...arf} = new URL(tab.url);
 
-  const hostnameDomain = hostname.includes("zatca.gov.sa") ? 'zatca.gov.sa' : 'oga.fasah.sa';
+  const hostnameDomain = hostname.includes("zatca.gov.sa") ? 'zatca.gov.sa' : 'fasah.sa';
   
   await chrome.cookies.getAll(
     {
